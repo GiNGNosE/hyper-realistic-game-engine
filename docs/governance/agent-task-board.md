@@ -1,9 +1,9 @@
 # Agent Task Board
 
-<!-- markdownlint-disable MD024 -->
+<!-- markdownlint-disable MD022 MD024 -->
 
 BoardVersion: 2026-02-27.1
-BoardHash: 8fb6794e258ef0366d0238b49b2141ce6bd65d10c7eb6f780632b5f76974a6f8
+BoardHash: c468fad2253bc95d19bb644f39a66d1bacf1fc4c1b82ee1832e5af70084713c0
 ## ActiveTasks
 
 ### Task
