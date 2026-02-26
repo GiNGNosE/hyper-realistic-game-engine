@@ -4,8 +4,7 @@ This contract defines `artifacts/policy/clarification-log.json`.
 
 ## Purpose
 
-`clarification-log.json` provides machine-verifiable evidence that ambiguity was
-surfaced to the user and resolved before implementation decisions were finalized.
+`clarification-log.json` provides machine-verifiable evidence that ambiguity was surfaced to the user and resolved before implementation decisions were finalized.
 
 This artifact is conditionally required: only when CI ambiguity triggers are detected.
 
@@ -35,20 +34,34 @@ Each item must include:
 - `missing_target_scope`
 - `governance_conflict`
 
-## Event-Conditioned Trigger Activation
+## Event-Scoped Trigger Applicability
 
-Trigger activation is evaluated against CI event context, not only artifact presence.
+`missing_target_scope` is event-scoped and only applies when changed-path scope
+is expected.
 
-- `missing_target_scope` is active only for scoped events: `pull_request`, `push`.
-- For `workflow_dispatch` and `schedule`, `missing_target_scope` is not activated.
-- Other trigger types remain governed by their own detector conditions.
+| Event | Scope expectation | `missing_target_scope` |
+| --- | --- | --- |
+| `pull_request` | Scoped | Evaluated |
+| `push` | Scoped | Evaluated |
+| `workflow_dispatch` | Unscoped | Not evaluated |
+| `schedule` | Unscoped | Not evaluated |
 
-`artifacts/policy/clarification-validation.json` must expose event-context evidence:
+Compatibility note: this is a behavioral refinement only. Schema contracts stay
+backward compatible with no field removal in
+`artifacts/policy/ambiguity-triggers.json` or
+`artifacts/policy/clarification-validation.json`, and required PR metadata keys
+(`TaskBoardVersion`, `TaskID`, `OwnerAgent`) are unchanged.
 
-- `event_name` (string): evaluated CI event.
-- `target_scope_required` (boolean): whether target-scope clarification was required for the evaluated event.
-- `required_clarification` (boolean): whether any clarification was required after trigger evaluation.
-- `errors` (array): validation errors, empty when passing.
+## Active-vs-Queued Task Lifecycle Note
+
+Clarification evidence requirements apply only to actively executing work.
+
+- `ActiveTasks` are executable for the current cycle.
+- `QueuedTasks` are pre-assigned and become executable only after orchestrator
+  promotion into `ActiveTasks`.
+- This lifecycle refinement does not add or remove required fields in
+  `clarification-log.json`, `ambiguity-triggers.json`, or
+  `clarification-validation.json`.
 
 ## Validation Semantics
 
@@ -63,25 +76,7 @@ CI must reject when:
 
 If no ambiguity trigger exists, the artifact is optional and not required to pass.
 
-### Event-Scoped Trigger Semantics
-
-`missing_target_scope` is conditionally event-scoped. It is required only for events where
-changed-path scope is expected.
-
-| Event | Scope expectation | `missing_target_scope` behavior |
-| --- | --- | --- |
-| `pull_request` | Scoped | Trigger is evaluated and can be emitted |
-| `push` | Scoped | Trigger is evaluated and can be emitted |
-| `workflow_dispatch` | Unscoped | Trigger is not evaluated |
-| `schedule` | Unscoped | Trigger is not evaluated |
-
-### Compatibility Note
-
-This update refines trigger behavior by event context and does not remove any schema fields from
-`clarification-log.json`, `ambiguity-triggers.json`, or `clarification-validation.json`.
-
 ## Related Artifacts
 
-- `artifacts/policy/ambiguity-triggers.json`: produced by CI trigger detector and treated as
-  source of truth for whether clarification is mandatory.
+- `artifacts/policy/ambiguity-triggers.json`: produced by CI trigger detector and treated as source of truth for whether clarification is mandatory.
 - `artifacts/policy/clarification-log.json`: agent-provided clarification proof.

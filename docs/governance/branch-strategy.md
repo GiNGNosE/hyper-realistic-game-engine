@@ -35,9 +35,7 @@ Examples:
 ## Enforcement Layers
 
 1. `policy-verdict` lane `lane-branch-governance` enforces source naming and base target matrix and emits `artifacts/policy/lane-branch-governance.json`.
-2. `policy-verdict` lane `lane-pr-template-governance` enforces PR template compliance and emits `artifacts/policy/pr-template-validation.json`.
-3. GitHub branch protection/ruleset on `main` enforces PR-only merge flow and requires
-   status checks `policy-verdict`, `reviewer-agent`, `agent-delivery`, and `agent-task-board`.
+2. GitHub branch protection/ruleset on `main` enforces PR-only merge flow and requires status check `policy-verdict`.
 
 Both layers are required: CI enforces branch semantics, while platform ruleset blocks direct pushes and bypass paths.
 
@@ -47,8 +45,7 @@ Configure on GitHub for `main`:
 
 - Require a pull request before merging.
 - Require branches to be up to date before merging.
-- Require status checks `policy-verdict`, `reviewer-agent`, `agent-delivery`, and `agent-task-board`.
-- Require conversation resolution before merge.
+- Require status check `policy-verdict`.
 - Block force pushes.
 - Block deletions.
 - Restrict who can bypass protections (prefer no bypass).
@@ -69,42 +66,7 @@ Apply settings through:
 ### Phase 2: Enforce
 
 - Keep lane failures merge-blocking in `policy-verdict`.
-- Enable/confirm required `policy-verdict`, `reviewer-agent`, `agent-delivery`, and
-  `agent-task-board` status checks in `main` ruleset.
-
-## Single Source Task Assignment Board
-
-Task assignment source of truth is:
-
-- `docs/governance/agent-task-board.md`
-
-Merge-blocking checks enforce compliance:
-
-- `agent-task-board`: validates board schema, ownership, status fields, and BoardHash integrity.
-- `agent-delivery`: requires PR metadata fields `TaskBoardVersion`, `TaskID`, and
-  `OwnerAgent`, and verifies they match the task board.
-
-Agents must read and execute only tasks assigned to their `OwnerAgent` entries in the task board.
-
-Task completion lifecycle is soft-archive:
-
-- Owner agents set `Status: done` when implementation is complete and submit/update their PR in the same cycle.
-- Completed tasks remain in `docs/governance/agent-task-board.md` until orchestrator cleanup after merge.
-- Agents must not remove their own completed task blocks from the task board.
-- `QueuedTasks` is reserved for pre-assigned follow-up work and is not part of the active execution wave.
-- Orchestrator promotes queued tasks into `ActiveTasks` after the matching owner's active task is completed and stabilized.
-
-## Agent Auto-Submit Contract
-
-Agent implementation branches must use:
-
-- `.github/scripts/agent-submit.sh --agent <agent1|agent2|agent3> --message "<summary>"`
-
-The required `agent-delivery` check enforces:
-
-- PR title prefix `[agent1|agent2|agent3]`.
-- PR body declaration `OwnerAgent: agent1|agent2|agent3`.
-- Commit subjects in the PR range prefixed with the same owner agent tag.
+- Enable/confirm required `policy-verdict` status check in `main` ruleset.
 
 ## Verification Matrix
 
@@ -126,3 +88,13 @@ Task completion lifecycle is soft-archive:
 - Completed tasks remain in `docs/governance/agent-task-board.md` until
   orchestrator cleanup after merge.
 - Agents must not remove their own completed task blocks from the task board.
+
+## Active vs Queued Task Lifecycle
+
+- `ActiveTasks` are the only tasks executable by agents in the current cycle.
+- `QueuedTasks` are pre-assigned follow-up work and are not executable until
+  the orchestrator promotes them into `ActiveTasks`.
+- When an active task is completed and stabilized, orchestrator promotes the
+  matching queued task for that owner agent into the next active wave.
+- Queued-task behavior is a lifecycle refinement and does not change required
+  PR metadata keys: `TaskBoardVersion`, `TaskID`, and `OwnerAgent`.

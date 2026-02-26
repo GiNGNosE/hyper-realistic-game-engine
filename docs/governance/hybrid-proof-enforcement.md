@@ -8,9 +8,7 @@ This document defines the tightened hybrid enforcement model:
 
 ## Why This Exists
 
-Rule guidance alone is not sufficient for robust control because it is difficult to prove at review
-time. This model requires machine-verifiable artifacts and independent CI cross-checks so merges are
-blocked when evidence is incomplete, inconsistent, or self-asserted without corroboration.
+Rule guidance alone is not sufficient for robust control because it is difficult to prove at review time. This model requires machine-verifiable artifacts and independent CI cross-checks so merges are blocked when evidence is incomplete, inconsistent, or self-asserted without corroboration.
 
 ## Required Artifacts
 
@@ -56,22 +54,35 @@ CI emits `ambiguity-triggers.json` from policy checks. Initial triggers:
 
 Each trigger maps to at least one required clarification entry when active.
 
-### Trigger to Event Context Mapping
+### Event-to-Trigger Scope Mapping
 
-| Trigger type | pull_request | push | workflow_dispatch | schedule |
-| --- | --- | --- | --- | --- |
-| `missing_acceptance_criteria` | active | active | active | active |
-| `multiple_valid_implementations` | active | active | active | active |
-| `missing_target_scope` | active | active | inactive | inactive |
-| `governance_conflict` | active | active | active | active |
+`missing_target_scope` is event-scoped and only applies when changed-path scope
+is expected.
 
-`missing_target_scope` is evaluated only for scoped events (`pull_request`, `push`) where target
-scope evidence is mandatory.
+| Event | Scope expectation | `missing_target_scope` |
+| --- | --- | --- |
+| `pull_request` | Scoped | Evaluated |
+| `push` | Scoped | Evaluated |
+| `workflow_dispatch` | Unscoped | Not evaluated |
+| `schedule` | Unscoped | Not evaluated |
 
-## Compatibility Note
+### Compatibility Note
 
-Event-scoped activation of `missing_target_scope` is a behavioral refinement only. Artifact schemas
-and required field names remain unchanged.
+This is a behavioral refinement only. Artifact contracts stay backward
+compatible with no field removal in
+`artifacts/policy/ambiguity-triggers.json` or
+`artifacts/policy/clarification-validation.json`, and required PR metadata keys
+(`TaskBoardVersion`, `TaskID`, `OwnerAgent`) are unchanged.
+
+### Active-vs-Queued Execution Contract
+
+- Proof enforcement applies to currently executing `ActiveTasks`.
+- `QueuedTasks` are pre-assigned follow-up entries and are not executable until
+  orchestrator promotion into `ActiveTasks`.
+- Task lifecycle progression is: assigned active work -> `Status: done`
+  soft-archive retention -> orchestrator cleanup after merge.
+- Queued-task introduction is a behavior refinement and does not remove or
+  rename required delivery metadata keys.
 
 ## Merge-Blocking Conditions
 
@@ -113,8 +124,5 @@ The validator set was exercised with synthetic artifacts to confirm fail/pass se
 - Correctness lane lint outputs are mandatory evidence and are merge-blocking on failure.
 - Lint scope, suppression lifecycle, and version pinning contract are defined in `docs/governance/linting-policy.md`.
 - Branch strategy enforcement runs as an independent merge-blocking lane in `policy-verdict`.
-- Agent assignment source of truth is `docs/governance/agent-task-board.md`.
-- Reviewer and delivery lanes must validate assignment metadata (`TaskBoardVersion`, `TaskID`,
-  `OwnerAgent`) against that board.
 - This model does not relax any existing governance thresholds.
 - Schema versions must be incremented with compatibility notes when contracts evolve.
