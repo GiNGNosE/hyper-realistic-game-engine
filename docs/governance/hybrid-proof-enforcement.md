@@ -8,10 +8,9 @@ This document defines the tightened hybrid enforcement model:
 
 ## Why This Exists
 
-Rule guidance alone is not sufficient for robust control because it is difficult
-to prove at review time. This model requires machine-verifiable artifacts and
-independent CI cross-checks so merges are blocked when evidence is incomplete,
-inconsistent, or self-asserted without corroboration.
+Rule guidance alone is not sufficient for robust control because it is difficult to prove at review
+time. This model requires machine-verifiable artifacts and independent CI cross-checks so merges are
+blocked when evidence is incomplete, inconsistent, or self-asserted without corroboration.
 
 ## Required Artifacts
 
@@ -69,11 +68,10 @@ Each trigger maps to at least one required clarification entry when active.
 `missing_target_scope` is evaluated only for scoped events (`pull_request`, `push`) where target
 scope evidence is mandatory.
 
-### Compatibility Note
+## Compatibility Note
 
-This is a behavioral refinement only. Artifact contracts stay backward compatible with no field
-removal in `artifacts/policy/ambiguity-triggers.json` or
-`artifacts/policy/clarification-validation.json`.
+Event-scoped activation of `missing_target_scope` is a behavioral refinement only. Artifact schemas
+and required field names remain unchanged.
 
 ## Merge-Blocking Conditions
 
@@ -96,9 +94,6 @@ Expected outcomes:
 - Applicable-rule coverage gap -> fail.
 - Ambiguity trigger present and no clarification log -> fail.
 - Clarification entry missing user response -> fail.
-- `pull_request` or `push` with missing target scope -> `missing_target_scope` trigger can activate and may require clarification.
-- `workflow_dispatch` or `schedule` with no changed-path target scope ->
-  no `missing_target_scope` trigger from that condition alone.
 - All artifacts valid and cross-consistent -> pass.
 
 ### Local Script Verification (Reference)
@@ -108,8 +103,7 @@ The validator set was exercised with synthetic artifacts to confirm fail/pass se
 - Missing receipt produced `Rule read receipt validation failed`.
 - Wrong hash produced `rule_inventory_hash mismatch with CI-computed hash`.
 - Coverage omission produced `Receipt applied_rules missing required rules`.
-- Missing clarification log with active trigger produced
-  `Ambiguity triggers detected but clarification-log.json is missing`.
+- Missing clarification log with active trigger produced `Ambiguity triggers detected but clarification-log.json is missing`.
 - Empty clarification `user_response` produced `must be a non-empty string`.
 - Fully consistent artifact set passed all validation scripts.
 
@@ -119,12 +113,8 @@ The validator set was exercised with synthetic artifacts to confirm fail/pass se
 - Correctness lane lint outputs are mandatory evidence and are merge-blocking on failure.
 - Lint scope, suppression lifecycle, and version pinning contract are defined in `docs/governance/linting-policy.md`.
 - Branch strategy enforcement runs as an independent merge-blocking lane in `policy-verdict`.
-- Clarification event-gating semantics are protected by a dedicated deterministic CI guardrail
-  artifact at `artifacts/policy/clarification-event-gating-guardrail.json`.
+- Agent assignment source of truth is `docs/governance/agent-task-board.md`.
+- Reviewer and delivery lanes must validate assignment metadata (`TaskBoardVersion`, `TaskID`,
+  `OwnerAgent`) against that board.
 - This model does not relax any existing governance thresholds.
 - Schema versions must be incremented with compatibility notes when contracts evolve.
-
-## Compatibility Summary
-
-Event-aware activation for `missing_target_scope` is a behavioral refinement. It does
-not remove trigger types or remove `clarification-validation.json` contract fields.

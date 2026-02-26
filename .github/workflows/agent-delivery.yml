@@ -13,6 +13,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Validate agent task board schema and hash
+        run: .github/scripts/validate-agent-task-board.sh
       - name: Validate agent delivery contract
         run: .github/scripts/validate-agent-delivery.sh
       - name: Upload agent delivery artifact
@@ -20,4 +22,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: agent-delivery
-          path: artifacts/policy/agent-delivery-validation.json
+          path: |
+            artifacts/policy/agent-delivery-validation.json
+            artifacts/policy/agent-task-board-validation.json

@@ -4,7 +4,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  .github/scripts/agent-submit.sh --agent <agent1|agent2|agent3> --message "<summary>" [--base <branch>] [--title "<pr title>"] [--body-file <path>] [--draft]
+  .github/scripts/agent-submit.sh --agent <agent1|agent2|agent3> --task-id <TaskID> --message "<summary>" [--task-board-version <value>] [--base <branch>] [--title "<pr title>"] [--body-file <path>] [--draft]
 
 Behavior:
   1) Stages and commits local changes if present.
@@ -14,7 +14,9 @@ EOF
 }
 
 AGENT=""
+TASK_ID=""
 MESSAGE=""
+TASK_BOARD_VERSION=""
 BASE_BRANCH="main"
 PR_TITLE=""
 PR_BODY_FILE=""
@@ -28,6 +30,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --message)
       MESSAGE="${2:-}"
+      shift 2
+      ;;
+    --task-id)
+      TASK_ID="${2:-}"
+      shift 2
+      ;;
+    --task-board-version)
+      TASK_BOARD_VERSION="${2:-}"
       shift 2
       ;;
     --base)
@@ -58,8 +68,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "${AGENT}" || -z "${MESSAGE}" ]]; then
-  echo "Both --agent and --message are required." >&2
+if [[ -z "${AGENT}" || -z "${TASK_ID}" || -z "${MESSAGE}" ]]; then
+  echo "--agent, --task-id, and --message are required." >&2
   usage
   exit 2
 fi
@@ -67,6 +77,26 @@ fi
 if [[ "${AGENT}" != "agent1" && "${AGENT}" != "agent2" && "${AGENT}" != "agent3" ]]; then
   echo "Invalid --agent: ${AGENT}. Expected one of: agent1, agent2, agent3." >&2
   exit 2
+fi
+
+if [[ -z "${TASK_BOARD_VERSION}" ]]; then
+  if [[ ! -f "docs/governance/agent-task-board.md" ]]; then
+    echo "Missing docs/governance/agent-task-board.md and no --task-board-version provided." >&2
+    exit 2
+  fi
+  TASK_BOARD_VERSION="$(
+    python3 - <<'PY'
+import pathlib
+import re
+text = pathlib.Path("docs/governance/agent-task-board.md").read_text(encoding="utf-8")
+m = re.search(r"(?m)^BoardVersion:\s*(\S+)\s*$", text)
+print(m.group(1) if m else "")
+PY
+  )"
+  if [[ -z "${TASK_BOARD_VERSION}" ]]; then
+    echo "Could not resolve BoardVersion from docs/governance/agent-task-board.md" >&2
+    exit 2
+  fi
 fi
 
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -110,6 +140,8 @@ else
     --body "$(
       cat <<EOF
 OwnerAgent: ${AGENT}
+TaskBoardVersion: ${TASK_BOARD_VERSION}
+TaskID: ${TASK_ID}
 ImplementationComplete: true
 
 ## Summary

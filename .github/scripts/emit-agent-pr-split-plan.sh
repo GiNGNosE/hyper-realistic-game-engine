@@ -31,6 +31,7 @@ agent_owners = {
         ".github/scripts/fixtures/clarification-validator/",
     ],
     "agent2": [
+        "docs/governance/agent-task-board.md",
         "docs/governance/clarification-log-schema.md",
         "docs/governance/hybrid-proof-enforcement.md",
         "docs/governance/policy-verdict.md",
@@ -39,11 +40,14 @@ agent_owners = {
     "agent3": [
         ".github/scripts/run-reviewer-agent.sh",
         ".github/scripts/validate-agent-delivery.sh",
+        ".github/scripts/validate-agent-task-board.sh",
+        ".github/scripts/update-agent-task-board.sh",
         ".github/scripts/agent-submit.sh",
         ".github/scripts/emit-agent-pr-split-plan.sh",
         ".github/scripts/run-three-agent-consolidation-dry-run.sh",
         ".github/workflows/reviewer-agent.yml",
         ".github/workflows/agent-delivery.yml",
+        ".github/workflows/agent-task-board.yml",
         ".github/rulesets/main-protected-trunk.json",
     ],
 }
