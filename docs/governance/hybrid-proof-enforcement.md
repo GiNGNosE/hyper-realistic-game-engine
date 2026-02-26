@@ -18,6 +18,7 @@ Rule guidance alone is not sufficient for robust control because it is difficult
 - `artifacts/policy/rule-inventory-hash.txt`
 - `artifacts/policy/ambiguity-triggers.json`
 - `artifacts/policy/clarification-log.json` (required only when triggers are present)
+- `artifacts/policy/lane-branch-governance.json`
 
 ## End-to-End Flow
 
@@ -88,5 +89,6 @@ The validator set was exercised with synthetic artifacts to confirm fail/pass se
 ## Operational Notes
 
 - Artifact validation is additive to existing correctness and performance lanes.
+- Branch strategy enforcement runs as an independent merge-blocking lane in `policy-verdict`.
 - This model does not relax any existing governance thresholds.
 - Schema versions must be incremented with compatibility notes when contracts evolve.

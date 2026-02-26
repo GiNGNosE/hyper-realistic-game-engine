@@ -78,6 +78,20 @@ jobs:
           name: lane-proof-enforcement
           path: artifacts/policy/*.json
 
+  lane-branch-governance:
+    name: lane-branch-governance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate branch governance
+        run: .github/scripts/validate-branch-governance.sh
+      - name: Upload branch governance artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lane-branch-governance
+          path: artifacts/policy/lane-branch-governance.json
+
   policy-verdict:
     name: policy-verdict
     runs-on: ubuntu-latest
@@ -86,6 +100,7 @@ jobs:
       - lane-correctness
       - lane-performance
       - proof-enforcement
+      - lane-branch-governance
     steps:
       - name: Compute final policy verdict
         run: |
@@ -93,8 +108,9 @@ jobs:
           CORRECTNESS_STATUS="${{ needs.lane-correctness.result }}"
           PERFORMANCE_STATUS="${{ needs.lane-performance.result }}"
           PROOF_STATUS="${{ needs.proof-enforcement.result }}"
+          BRANCH_GOVERNANCE_STATUS="${{ needs.lane-branch-governance.result }}"
 
-          if [[ "${CORRECTNESS_STATUS}" == "success" && "${PERFORMANCE_STATUS}" == "success" && "${PROOF_STATUS}" == "success" ]]; then
+          if [[ "${CORRECTNESS_STATUS}" == "success" && "${PERFORMANCE_STATUS}" == "success" && "${PROOF_STATUS}" == "success" && "${BRANCH_GOVERNANCE_STATUS}" == "success" ]]; then
             VERDICT="pass"
           else
             VERDICT="fail"
@@ -107,7 +123,8 @@ jobs:
             "lane_results": {
               "lane-correctness": "${CORRECTNESS_STATUS}",
               "lane-performance": "${PERFORMANCE_STATUS}",
-              "proof-enforcement": "${PROOF_STATUS}"
+              "proof-enforcement": "${PROOF_STATUS}",
+              "lane-branch-governance": "${BRANCH_GOVERNANCE_STATUS}"
             }
           }
           EOF

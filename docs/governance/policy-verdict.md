@@ -24,6 +24,12 @@ This document defines the solo automated review board.
 - KPI conformance for `M*`, `V*`, `A*`, `D*`,
 - baseline delta and lineage validation.
 
+### Lane C: Branch Governance
+
+- source branch taxonomy and naming validation,
+- base branch target matrix validation,
+- merge-route compliance for protected-trunk workflow.
+
 ## Threshold Source of Truth
 
 - Numeric thresholds must be loaded from `docs/pipeline/validation-metrics.md`.
@@ -43,6 +49,7 @@ This document defines the solo automated review board.
 
 - `artifacts/policy/lane-correctness.json`
 - `artifacts/policy/lane-performance.json`
+- `artifacts/policy/lane-branch-governance.json`
 - `artifacts/policy/waiver-validation.json`
 - `artifacts/policy/required-rules.json`
 - `artifacts/policy/rule-read-receipt.json`
@@ -72,6 +79,8 @@ This document defines the solo automated review board.
 
 Promotion must fail if any proof gate fails.
 
+`policy-verdict` also includes a mandatory `lane-branch-governance` lane that enforces repository branch strategy policy for pull requests.
+
 ### Merge-Blocking Failure Conditions
 
 - Missing `rule-read-receipt.json`.
@@ -80,3 +89,4 @@ Promotion must fail if any proof gate fails.
 - Missing applicable rules in `applied_rules`.
 - Ambiguity triggers detected without a valid `clarification-log.json`.
 - Clarification entries missing `user_response` or `resolved_decision`.
+- Branch naming or base-target policy violation in `lane-branch-governance`.
