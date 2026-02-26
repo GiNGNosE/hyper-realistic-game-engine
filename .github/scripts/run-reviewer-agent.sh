@@ -121,7 +121,7 @@ if clarification_validator_changed and not clarification_matrix_harness_changed:
         severity="blocker",
         issue="validate-clarification-log.sh changed without updating test-validate-clarification-log-matrix.sh",
         owner_agent="agent1",
-        task_id="TB-001",
+        task_id="TB-005",
         file_hints=[
             ".github/scripts/validate-clarification-log.sh",
             ".github/scripts/test-validate-clarification-log-matrix.sh",
@@ -144,7 +144,7 @@ if policy_workflow_changed and not docs_changed:
         severity="major",
         issue="policy-verdict workflow changed without companion governance doc update",
         owner_agent="agent3",
-        task_id="TB-003",
+        task_id="TB-007",
         file_hints=[
             ".github/workflows/policy-verdict.yml",
             "docs/governance/policy-verdict.md",

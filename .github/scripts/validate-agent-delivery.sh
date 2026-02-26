@@ -30,8 +30,12 @@ if board_path.exists():
     for block in task_blocks[1:]:
         task_id_match = re.search(r"(?m)^TaskID:\s*(\S+)\s*$", block)
         owner_match = re.search(r"(?m)^OwnerAgent:\s*(\S+)\s*$", block)
-        if task_id_match and owner_match:
-            board_tasks[task_id_match.group(1)] = owner_match.group(1).lower()
+        status_match = re.search(r"(?m)^Status:\s*(\S+)\s*$", block)
+        if task_id_match and owner_match and status_match:
+            board_tasks[task_id_match.group(1)] = {
+                "owner": owner_match.group(1).lower(),
+                "status": status_match.group(1).lower(),
+            }
 else:
     board_content = ""
 
@@ -48,6 +52,7 @@ checks = {
     "pr_body_task_board_version": "pass",
     "pr_body_task_id": "pass",
     "task_board_lookup_match": "pass",
+    "task_status_valid": "pass",
     "commit_subject_agent_prefix": "pass",
 }
 errors = []
@@ -94,15 +99,28 @@ if is_pr_context:
                 f"TaskBoardVersion mismatch: PR={task_board_version} board={board_version}"
             )
         if task_id:
-            expected_owner = board_tasks.get(task_id, "")
-            if not expected_owner:
+            task_entry = board_tasks.get(task_id)
+            if not task_entry:
                 checks["task_board_lookup_match"] = "fail"
                 errors.append(f"TaskID not found in task board: {task_id}")
-            elif owner_agent and expected_owner != owner_agent:
-                checks["task_board_lookup_match"] = "fail"
-                errors.append(
-                    f"TaskID owner mismatch: TaskID {task_id} belongs to {expected_owner}, PR declares {owner_agent}"
-                )
+            else:
+                expected_owner = task_entry["owner"]
+                task_status = task_entry["status"]
+                if owner_agent and expected_owner != owner_agent:
+                    checks["task_board_lookup_match"] = "fail"
+                    errors.append(
+                        f"TaskID owner mismatch: TaskID {task_id} belongs to {expected_owner}, PR declares {owner_agent}"
+                    )
+                if task_status == "cancelled":
+                    checks["task_status_valid"] = "fail"
+                    errors.append(
+                        f"TaskID {task_id} is cancelled in the task board and cannot be used for PR delivery metadata"
+                    )
+                if task_status not in {"assigned", "in_progress", "blocked", "done", "cancelled"}:
+                    checks["task_status_valid"] = "fail"
+                    errors.append(
+                        f"TaskID {task_id} has unsupported status '{task_status}' in task board"
+                    )
 
 commit_subjects = []
 if is_pr_context and base_sha and head_sha:
@@ -139,6 +157,7 @@ else:
     checks["pr_body_task_board_version"] = "skip"
     checks["pr_body_task_id"] = "skip"
     checks["task_board_lookup_match"] = "skip"
+    checks["task_status_valid"] = "skip"
     checks["commit_subject_agent_prefix"] = "skip"
 
 status = "pass" if not errors else "fail"
@@ -148,6 +167,7 @@ payload = {
     "owner_agent": owner_agent if owner_agent in allowed_agents else "",
     "task_board_version": task_board_version,
     "task_id": task_id,
+    "task_status": board_tasks.get(task_id, {}).get("status", ""),
     "board_version": board_version,
     "checks": checks,
     "commit_count": len(commit_subjects),
