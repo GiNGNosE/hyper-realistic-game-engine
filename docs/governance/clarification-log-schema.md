@@ -4,7 +4,8 @@ This contract defines `artifacts/policy/clarification-log.json`.
 
 ## Purpose
 
-`clarification-log.json` provides machine-verifiable evidence that ambiguity was surfaced to the user and resolved before implementation decisions were finalized.
+`clarification-log.json` provides machine-verifiable evidence that ambiguity was
+surfaced to the user and resolved before implementation decisions were finalized.
 
 This artifact is conditionally required: only when CI ambiguity triggers are detected.
 
@@ -34,6 +35,21 @@ Each item must include:
 - `missing_target_scope`
 - `governance_conflict`
 
+## Event-Conditioned Trigger Activation
+
+Trigger activation is evaluated against CI event context, not only artifact presence.
+
+- `missing_target_scope` is active only for scoped events: `pull_request`, `push`.
+- For `workflow_dispatch` and `schedule`, `missing_target_scope` is not activated.
+- Other trigger types remain governed by their own detector conditions.
+
+`artifacts/policy/clarification-validation.json` must expose event-context evidence:
+
+- `event_name` (string): evaluated CI event.
+- `target_scope_required` (boolean): whether target-scope clarification was required for the evaluated event.
+- `required_clarification` (boolean): whether any clarification was required after trigger evaluation.
+- `errors` (array): validation errors, empty when passing.
+
 ## Validation Semantics
 
 CI must reject when:
@@ -47,7 +63,14 @@ CI must reject when:
 
 If no ambiguity trigger exists, the artifact is optional and not required to pass.
 
+## Compatibility Note
+
+This change is a behavioral refinement to trigger activation semantics for
+`missing_target_scope`. It does not remove trigger types or required schema fields
+from the clarification-log contract.
+
 ## Related Artifacts
 
-- `artifacts/policy/ambiguity-triggers.json`: produced by CI trigger detector and treated as source of truth for whether clarification is mandatory.
+- `artifacts/policy/ambiguity-triggers.json`: produced by CI trigger detector and
+  treated as source of truth for whether clarification is mandatory.
 - `artifacts/policy/clarification-log.json`: agent-provided clarification proof.

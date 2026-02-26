@@ -115,8 +115,20 @@ Lint behavior and suppression lifecycle are defined in `docs/governance/linting-
 - deterministic applicable-rule resolution from phase and changed paths,
 - rule receipt schema and per-rule evidence specificity,
 - full applicable-rule coverage in declared and applied sets,
-- deterministic ambiguity trigger generation and clarification requirements,
+- deterministic ambiguity trigger generation and event-aware clarification requirements,
 - integrity binding between proof artifacts and CI event context.
+
+Proof-enforcement must evaluate clarification requirements with CI event context:
+
+- `pull_request`, `push` -> target scope is required and `missing_target_scope` may activate.
+- `workflow_dispatch`, `schedule` -> target scope is not required for trigger activation.
+- Current `policy-verdict` workflow entry points are `pull_request`,
+  `workflow_dispatch`, and `schedule`; `push` semantics apply when the validator
+  runs under push-context lanes or harnesses.
+
+`artifacts/policy/clarification-validation.json` remains mandatory proof output and must
+include event-context fields (`event_name`, `target_scope_required`,
+`required_clarification`, `errors`).
 
 Promotion must fail if any proof gate fails.
 
@@ -129,7 +141,12 @@ repository branch strategy policy for pull requests.
 - Receipt identity mismatch (`commit_id`, `pr_number`, `phase`, or changed paths).
 - Rule inventory hash mismatch with CI-computed `.mdc` hash.
 - Missing applicable rules in `applied_rules`.
-- Ambiguity triggers detected without a valid `clarification-log.json`.
+- Ambiguity triggers detected (after event-context evaluation) without a valid `clarification-log.json`.
 - Clarification entries missing `user_response` or `resolved_decision`.
 - Branch naming or base-target policy violation in `lane-branch-governance`.
 - PR template marker/section/checklist validation failure in `lane-pr-template-governance`.
+
+## Compatibility Note
+
+Event-aware `missing_target_scope` activation is a behavioral refinement only. It does
+not remove trigger types, required artifacts, or clarification validation fields.

@@ -8,7 +8,10 @@ This document defines the tightened hybrid enforcement model:
 
 ## Why This Exists
 
-Rule guidance alone is not sufficient for robust control because it is difficult to prove at review time. This model requires machine-verifiable artifacts and independent CI cross-checks so merges are blocked when evidence is incomplete, inconsistent, or self-asserted without corroboration.
+Rule guidance alone is not sufficient for robust control because it is difficult
+to prove at review time. This model requires machine-verifiable artifacts and
+independent CI cross-checks so merges are blocked when evidence is incomplete,
+inconsistent, or self-asserted without corroboration.
 
 ## Required Artifacts
 
@@ -54,6 +57,20 @@ CI emits `ambiguity-triggers.json` from policy checks. Initial triggers:
 
 Each trigger maps to at least one required clarification entry when active.
 
+### Event Context Mapping
+
+Trigger activation is event-aware:
+
+- `pull_request`, `push` -> `missing_target_scope` can be emitted and target scope is required.
+- `workflow_dispatch`, `schedule` -> `missing_target_scope` is not emitted from target-scope absence.
+
+Validation output in `artifacts/policy/clarification-validation.json` must include:
+
+- `event_name`
+- `target_scope_required`
+- `required_clarification`
+- `errors`
+
 ## Merge-Blocking Conditions
 
 `policy-verdict` must fail if any condition is true:
@@ -75,6 +92,9 @@ Expected outcomes:
 - Applicable-rule coverage gap -> fail.
 - Ambiguity trigger present and no clarification log -> fail.
 - Clarification entry missing user response -> fail.
+- `pull_request` or `push` with missing target scope -> `missing_target_scope` trigger can activate and may require clarification.
+- `workflow_dispatch` or `schedule` with no changed-path target scope ->
+  no `missing_target_scope` trigger from that condition alone.
 - All artifacts valid and cross-consistent -> pass.
 
 ### Local Script Verification (Reference)
@@ -96,3 +116,8 @@ The validator set was exercised with synthetic artifacts to confirm fail/pass se
 - Branch strategy enforcement runs as an independent merge-blocking lane in `policy-verdict`.
 - This model does not relax any existing governance thresholds.
 - Schema versions must be incremented with compatibility notes when contracts evolve.
+
+## Compatibility Note
+
+Event-aware activation for `missing_target_scope` is a behavioral refinement. It does
+not remove trigger types or remove `clarification-validation.json` contract fields.
