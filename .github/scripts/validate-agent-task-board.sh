@@ -15,6 +15,7 @@ errors = []
 checks = {
     "board_exists": "pass",
     "header_fields_present": "pass",
+    "task_sections_present": "pass",
     "task_schema_valid": "pass",
     "owner_agents_valid": "pass",
     "task_ids_unique": "pass",
@@ -59,39 +60,62 @@ if declared_hash and declared_hash != computed_hash:
     )
 
 tasks = []
-task_blocks = re.split(r"(?m)^### Task\s*$", content)
-for block in task_blocks[1:]:
-    task_id_match = re.search(r"(?m)^TaskID:\s*(\S+)\s*$", block)
-    owner_match = re.search(r"(?m)^OwnerAgent:\s*(\S+)\s*$", block)
-    status_match = re.search(r"(?m)^Status:\s*(\S+)\s*$", block)
-    scope_match = re.search(r"(?ms)^ScopePaths:\n(.+?)(?:\n[A-Z][A-Za-z]+:|\Z)", block)
-    acceptance_match = re.search(r"(?ms)^Acceptance:\n(.+?)(?:\n[A-Z][A-Za-z]+:|\Z)", block)
-    evidence_match = re.search(r"(?ms)^EvidenceArtifacts:\n(.+?)(?:\n[A-Z][A-Za-z]+:|\Z)", block)
 
-    task = {
-        "task_id": task_id_match.group(1) if task_id_match else "",
-        "owner_agent": owner_match.group(1).lower() if owner_match else "",
-        "status": status_match.group(1).lower() if status_match else "",
-        "scope_paths": [],
-        "acceptance": [],
-        "evidence_artifacts": [],
-    }
+section_specs = [
+    ("ActiveTasks", "QueuedTasks"),
+    ("QueuedTasks", "DispatchNotes"),
+]
+section_blocks = {}
+for section_name, next_name in section_specs:
+    section_match = re.search(
+        rf"(?ms)^## {section_name}\s*$\n(.*?)(?=^## {next_name}\s*$|\Z)",
+        content,
+    )
+    if not section_match:
+        checks["task_sections_present"] = "fail"
+        errors.append(f"Missing required section: ## {section_name}")
+        section_blocks[section_name] = ""
+    else:
+        section_blocks[section_name] = section_match.group(1)
 
-    def extract_bullets(text_match):
-        if not text_match:
-            return []
-        lines = text_match.group(1).strip().splitlines()
-        values = []
-        for line in lines:
-            line = line.strip()
-            if line.startswith("- "):
-                values.append(line[2:].strip())
-        return values
+def extract_bullets(text_match):
+    if not text_match:
+        return []
+    lines = text_match.group(1).strip().splitlines()
+    values = []
+    for line in lines:
+        line = line.strip()
+        if line.startswith("- "):
+            values.append(line[2:].strip())
+    return values
 
-    task["scope_paths"] = extract_bullets(scope_match)
-    task["acceptance"] = extract_bullets(acceptance_match)
-    task["evidence_artifacts"] = extract_bullets(evidence_match)
-    tasks.append(task)
+task_counts = {"ActiveTasks": 0, "QueuedTasks": 0}
+for section_name, block_text in section_blocks.items():
+    task_blocks = re.split(r"(?m)^### Task\s*$", block_text)
+    if len(task_blocks) <= 1:
+        checks["task_schema_valid"] = "fail"
+        errors.append(f"Section {section_name} must contain at least one '### Task' block")
+        continue
+
+    for block in task_blocks[1:]:
+        task_id_match = re.search(r"(?m)^TaskID:\s*(\S+)\s*$", block)
+        owner_match = re.search(r"(?m)^OwnerAgent:\s*(\S+)\s*$", block)
+        status_match = re.search(r"(?m)^Status:\s*(\S+)\s*$", block)
+        scope_match = re.search(r"(?ms)^ScopePaths:\n(.+?)(?:\n[A-Z][A-Za-z]+:|\Z)", block)
+        acceptance_match = re.search(r"(?ms)^Acceptance:\n(.+?)(?:\n[A-Z][A-Za-z]+:|\Z)", block)
+        evidence_match = re.search(r"(?ms)^EvidenceArtifacts:\n(.+?)(?:\n[A-Z][A-Za-z]+:|\Z)", block)
+
+        task = {
+            "section": section_name,
+            "task_id": task_id_match.group(1) if task_id_match else "",
+            "owner_agent": owner_match.group(1).lower() if owner_match else "",
+            "status": status_match.group(1).lower() if status_match else "",
+            "scope_paths": extract_bullets(scope_match),
+            "acceptance": extract_bullets(acceptance_match),
+            "evidence_artifacts": extract_bullets(evidence_match),
+        }
+        tasks.append(task)
+        task_counts[section_name] = task_counts.get(section_name, 0) + 1
 
 required_ok = True
 for idx, task in enumerate(tasks):
@@ -116,7 +140,7 @@ for idx, task in enumerate(tasks):
 
 if not tasks:
     required_ok = False
-    errors.append("Board must contain at least one '### Task' block")
+    errors.append("Board must contain task blocks under ActiveTasks and QueuedTasks")
 
 if not required_ok:
     checks["task_schema_valid"] = "fail"
@@ -159,6 +183,8 @@ payload = {
     "computed_hash": computed_hash,
     "checks": checks,
     "task_count": len(tasks),
+    "active_task_count": task_counts.get("ActiveTasks", 0),
+    "queued_task_count": task_counts.get("QueuedTasks", 0),
     "tasks": tasks,
     "errors": errors,
 }
