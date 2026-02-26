@@ -1,0 +1,92 @@
+# Hybrid Proof Enforcement
+
+This document defines the tightened hybrid enforcement model:
+
+1. Always-apply rule behavior (`.cursor/rules/*.mdc`),
+2. Artifact proof (`rule-read-receipt.json`, `clarification-log.json`),
+3. Merge-blocking CI enforcement (`policy-verdict`).
+
+## Why This Exists
+
+Rule guidance alone is not sufficient for robust control because it is difficult to prove at review time. This model requires machine-verifiable artifacts and independent CI cross-checks so merges are blocked when evidence is incomplete, inconsistent, or self-asserted without corroboration.
+
+## Required Artifacts
+
+- `artifacts/policy/rule-read-receipt.json`
+- `artifacts/policy/required-rules.json`
+- `artifacts/policy/changed-paths.json`
+- `artifacts/policy/rule-inventory-hash.txt`
+- `artifacts/policy/ambiguity-triggers.json`
+- `artifacts/policy/clarification-log.json` (required only when triggers are present)
+
+## End-to-End Flow
+
+```mermaid
+flowchart LR
+  gitDiff[GitDiffChangedPaths] --> resolveRules[ResolveApplicableRules]
+  phaseMatrix[PhaseActivationMatrix] --> resolveRules
+  mdcSet[ActiveMdcSet] --> ruleHash[ComputeRuleInventoryHash]
+  resolveRules --> requiredRules[RequiredRulesJson]
+  requiredRules --> validateCoverage[ValidateRuleCoverage]
+  receipt[RuleReadReceiptJson] --> validateReceipt[ValidateRuleReadReceipt]
+  validateReceipt --> validateCoverage
+  ambiguityDetector[DetectAmbiguityTriggers] --> ambiguityReport[AmbiguityTriggersJson]
+  ambiguityReport --> validateClarification[ValidateClarificationLog]
+  clarification[ClarificationLogJson] --> validateClarification
+  ruleHash --> validateIntegrity[ValidateProofIntegrity]
+  receipt --> validateIntegrity
+  validateCoverage --> policyVerdict[PolicyVerdict]
+  validateClarification --> policyVerdict
+  validateIntegrity --> policyVerdict
+```
+
+## Deterministic Ambiguity Triggers
+
+CI emits `ambiguity-triggers.json` from policy checks. Initial triggers:
+
+- `missing_acceptance_criteria`
+- `multiple_valid_implementations`
+- `missing_target_scope`
+- `governance_conflict`
+
+Each trigger maps to at least one required clarification entry when active.
+
+## Merge-Blocking Conditions
+
+`policy-verdict` must fail if any condition is true:
+
+- Missing `rule-read-receipt.json`.
+- Missing or invalid `required-rules.json` resolution.
+- Receipt fields mismatch CI context (`commit_id`, `pr_number`, `changed_paths`).
+- `rule_inventory_hash` mismatch.
+- Applicable rules are omitted from `applied_rules`.
+- Ambiguity trigger exists but clarification log is missing or invalid.
+- Clarification entries are missing `user_response` or `resolved_decision`.
+
+## Verification Matrix
+
+Expected outcomes:
+
+- Missing receipt -> fail.
+- Receipt with wrong rule hash -> fail.
+- Applicable-rule coverage gap -> fail.
+- Ambiguity trigger present and no clarification log -> fail.
+- Clarification entry missing user response -> fail.
+- All artifacts valid and cross-consistent -> pass.
+
+### Local Script Verification (Reference)
+
+The validator set was exercised with synthetic artifacts to confirm fail/pass semantics:
+
+- Missing receipt produced `Rule read receipt validation failed`.
+- Wrong hash produced `rule_inventory_hash mismatch with CI-computed hash`.
+- Coverage omission produced `Receipt applied_rules missing required rules`.
+- Missing clarification log with active trigger produced `Ambiguity triggers detected but clarification-log.json is missing`.
+- Empty clarification `user_response` produced `must be a non-empty string`.
+- Fully consistent artifact set passed all validation scripts.
+
+## Operational Notes
+
+- Artifact validation is additive to existing correctness and performance lanes.
+- This model does not relax any existing governance thresholds.
+- Schema versions must be incremented with compatibility notes when contracts evolve.
