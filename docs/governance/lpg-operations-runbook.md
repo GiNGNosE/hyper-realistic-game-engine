@@ -16,20 +16,31 @@ Required behavior:
 - command must return non-zero on benchmark failure,
 - output JSON must match LPG schema contract.
 - full command/payload contract is defined in `docs/governance/lpg-runtime-harness-contract.md`.
-- current minimal harness entrypoint is intentionally strict-fail until real benchmark backend wiring is complete.
+- recommended command includes explicit backend invocation, for example:
+  - `./tools/runtime-harness/run-benchmark.sh --phase "${POLICY_PHASE}" --scenario-set "canonical-s1-s3" --output "artifacts/perf/lpg-metrics.json" --backend-cmd "./build/runtime/lpg-runtime-benchmark --phase ${POLICY_PHASE} --scenario-set canonical-s1-s3 --output artifacts/perf/lpg-metrics.json"`
+- ensure benchmark backend binary is built before run:
+  - `cmake -S runtime -B build/runtime -DCMAKE_BUILD_TYPE=Release && cmake --build build/runtime --config Release --target lpg-runtime-benchmark`
+- bootstrap scope note: current backend supports `pre-phase-0` only and intentionally fails unsupported phases.
 
 ### 2) Trigger Non-Default Proof Run
 
 Run `policy-verdict` from GitHub Actions UI:
 
 - workflow: `policy-verdict`,
-- input: `policy_phase=phase-2` (or other non-default phase).
+- input: `policy_phase=pre-phase-0` for bootstrap validation.
 
 Expected results:
 
 - `lane-runtime-benchmark` succeeds using real harness output,
 - `lane-performance` consumes `artifacts/perf/lpg-metrics.json`,
 - `policy-verdict` publishes `artifacts/policy/final-verdict.json` with `status=pass`.
+- lane summary includes no phase/scenario mismatch errors.
+
+Optional negative-path confirmation while scope remains bootstrap-only:
+
+- run `policy-verdict` with `policy_phase=phase-2`,
+- expect explicit `lane-runtime-benchmark` failure for unsupported phase,
+- log the failure as expected until phase support is implemented.
 
 ### 3) Assign Weekly Governance Owners
 

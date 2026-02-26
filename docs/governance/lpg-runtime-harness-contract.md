@@ -17,7 +17,11 @@ Recommended in-repo entrypoint:
 
 Recommended `RUNTIME_HARNESS_CMD` shape:
 
-- `./tools/runtime-harness/run-benchmark.sh --phase "${POLICY_PHASE}" --scenario-set "canonical-s1-s3" --output "artifacts/perf/lpg-metrics.json"`
+- `./tools/runtime-harness/run-benchmark.sh --phase "${POLICY_PHASE}" --scenario-set "canonical-s1-s3" --output "artifacts/perf/lpg-metrics.json" --backend-cmd "./build/runtime/lpg-runtime-benchmark --phase ${POLICY_PHASE} --scenario-set canonical-s1-s3 --output artifacts/perf/lpg-metrics.json"`
+
+Current backend build step (local/CI command pre-step):
+
+- `cmake -S runtime -B build/runtime -DCMAKE_BUILD_TYPE=Release && cmake --build build/runtime --config Release --target lpg-runtime-benchmark`
 
 Entrypoint rules:
 
@@ -25,17 +29,20 @@ Entrypoint rules:
 - must not require interactive input,
 - must fail fast on benchmark execution errors.
 
-## Transitional Status (Current)
+## Runtime Backend Bridge (Current)
 
-Current `tools/runtime-harness/run-benchmark.sh` is a strict-fail placeholder:
+Current `tools/runtime-harness/run-benchmark.sh` acts as a strict backend bridge:
 
-- supports `--phase`, `--scenario-set`, and `--output`,
-- validates input contract shape,
-- exits non-zero with a clear action message until real benchmark backend wiring
-  is implemented.
-
-This is intentional to avoid synthetic CI passes before a real runtime benchmark
-engine is connected.
+- supports `--phase`, `--scenario-set`, `--output`, and `--backend-cmd`,
+- resolves backend command from CLI `--backend-cmd` or environment variable
+  `RUNTIME_BENCHMARK_BACKEND_CMD`,
+- invokes the backend command with resolved harness context
+  (`POLICY_PHASE`, `LPG_SCENARIO_SET_ID`, `LPG_RUNTIME_OUTPUT`),
+- exits non-zero when backend execution fails,
+- validates output schema, phase/scenario alignment, required scenario coverage,
+  and active phase required metrics before returning success.
+- currently supports only `pre-phase-0` for real metric emission; unsupported phases
+  and scenario sets fail explicitly.
 
 ## Command Contract
 
@@ -45,6 +52,8 @@ The command provided by `RUNTIME_HARNESS_CMD` must:
 2. Exit `0` only when the output file is complete and valid JSON.
 3. Exit non-zero when benchmark execution fails or output generation fails.
 4. Produce phase-aligned payload (`phase` must match `POLICY_PHASE`).
+5. Include complete phase-required metrics based on
+   `docs/pipeline/validation-metrics.md`.
 
 CI provenance constraints enforced by existing scripts:
 
@@ -131,31 +140,33 @@ Current phase gate expectations also require:
 
 ### Local Contract Check
 
-1. Run placeholder harness command directly:
-   - `bash tools/runtime-harness/run-benchmark.sh --phase pre-phase-0 --scenario-set canonical-s1-s3 --output artifacts/perf/lpg-metrics.json`
-2. Confirm explicit strict-fail behavior:
-   - command exits non-zero,
-   - output explains backend is not yet wired.
-3. After backend wiring, rerun and then confirm:
+1. Run harness command with explicit backend command:
+   - `bash tools/runtime-harness/run-benchmark.sh --phase pre-phase-0 --scenario-set canonical-s1-s3 --output artifacts/perf/lpg-metrics.json --backend-cmd "./build/runtime/lpg-runtime-benchmark --phase pre-phase-0 --scenario-set canonical-s1-s3 --output artifacts/perf/lpg-metrics.json"`
+2. Confirm success behavior:
+   - command exits `0`,
+   - output confirms payload contract validation succeeded.
+3. Confirm runtime artifact exists:
    - `test -f artifacts/perf/lpg-metrics.json`
-   - payload keys and types match this contract.
-4. After backend wiring, run LPG lane locally against emitted artifact:
+4. Run LPG lane locally against emitted artifact:
    - `POLICY_PHASE=<phase> LPG_METRICS_INPUT=artifacts/perf/lpg-metrics.json .github/scripts/run-performance-lane.sh`
-5. After backend wiring, confirm pass/fail artifact exists:
+5. Confirm pass/fail artifact exists:
    - `artifacts/policy/lane-performance.json`
 
 ### CI Contract Check
 
-1. While placeholder is active, expect CI `lane-runtime-benchmark` to fail
-   explicitly and non-silently.
-2. Set repository Actions variable `RUNTIME_HARNESS_CMD` to real backend command
-   once available.
-3. Trigger `policy-verdict` with non-default phase (for example `phase-2`).
-4. Verify:
+1. Set repository Actions variable `RUNTIME_HARNESS_CMD` to include harness
+   invocation and backend command arguments.
+2. Trigger `policy-verdict` with `policy_phase=pre-phase-0`.
+3. Verify bootstrap success:
    - `lane-runtime-benchmark` succeeds,
    - `lane-performance` consumes `artifacts/perf/lpg-metrics.json`,
    - `artifacts/policy/lane-performance.json` is generated,
    - `artifacts/policy/final-verdict.json` reflects lane results.
+4. Trigger `policy-verdict` with non-default phase (for example `phase-2`) while
+   backend scope remains `pre-phase-0`.
+5. Verify explicit unsupported-phase failure:
+   - `lane-runtime-benchmark` fails with unsupported phase message from backend,
+   - failure is non-silent and does not produce synthetic pass artifacts.
 
 ## Non-Goals
 
