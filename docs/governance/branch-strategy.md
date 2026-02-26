@@ -8,6 +8,7 @@ This repository uses a protected-trunk strategy with machine-enforced policy gat
 - `feat/*`: feature work.
 - `fix/*`: bug fixes.
 - `gov/*`: governance/process/tooling changes.
+- `chore/*`: maintenance/tooling changes without product behavior intent.
 - `exp/*`: bounded experiments.
 - `release/*`: cycle closeout/stabilization branches (short-lived).
 - `hotfix/*`: emergency fixes for `main` or an active `release/*`.
@@ -16,7 +17,7 @@ This repository uses a protected-trunk strategy with machine-enforced policy gat
 
 Pull request source branches must match:
 
-- `^(feat|fix|gov|exp|release|hotfix)/[a-z0-9][a-z0-9._-]{1,62}$`
+- `^(feat|fix|gov|chore|exp|release|hotfix)/[a-z0-9][a-z0-9._-]{1,62}$`
 
 Examples:
 
@@ -28,6 +29,7 @@ Examples:
 - `feat/*` -> `main`
 - `fix/*` -> `main`
 - `gov/*` -> `main`
+- `chore/*` -> `main`
 - `exp/*` -> `main`
 - `release/*` -> `main`
 - `hotfix/*` -> `main` or active `release/*`

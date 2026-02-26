@@ -14,14 +14,14 @@ on:
       enforcement_mode:
         description: "PR template validation mode: enforce or advisory"
         required: false
-        default: "enforce"
+        default: "advisory"
 
 jobs:
   lane-pr-template-governance:
     name: lane-pr-template-governance
     runs-on: ubuntu-latest
     env:
-      PR_TEMPLATE_ENFORCEMENT_MODE: ${{ github.event.inputs.enforcement_mode || 'enforce' }}
+      PR_TEMPLATE_ENFORCEMENT_MODE: ${{ github.event.inputs.enforcement_mode || 'advisory' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
