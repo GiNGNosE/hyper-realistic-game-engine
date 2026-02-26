@@ -107,7 +107,7 @@ if is_pr_context:
 commit_subjects = []
 if is_pr_context and base_sha and head_sha:
     completed = subprocess.run(
-        ["git", "log", "--format=%s", f"{base_sha}..{head_sha}"],
+        ["git", "log", "--no-merges", "--format=%s", f"{base_sha}..{head_sha}"],
         capture_output=True,
         text=True,
         check=True,
