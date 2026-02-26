@@ -56,7 +56,7 @@ while [[ $# -gt 0 ]]; do
       DRAFT_FLAG="--draft"
       shift
       ;;
-    -h|--help)
+    -h | --help)
       usage
       exit 0
       ;;
@@ -84,14 +84,15 @@ if [[ -z "${TASK_BOARD_VERSION}" ]]; then
     echo "Missing docs/governance/agent-task-board.md and no --task-board-version provided." >&2
     exit 2
   fi
-  TASK_BOARD_VERSION="$(python3 - <<'PY'
+  TASK_BOARD_VERSION="$(
+    python3 - <<'PY'
 import pathlib
 import re
 text = pathlib.Path("docs/governance/agent-task-board.md").read_text(encoding="utf-8")
 m = re.search(r"(?m)^BoardVersion:\s*(\S+)\s*$", text)
 print(m.group(1) if m else "")
 PY
-)"
+  )"
   if [[ -z "${TASK_BOARD_VERSION}" ]]; then
     echo "Could not resolve BoardVersion from docs/governance/agent-task-board.md" >&2
     exit 2
@@ -136,7 +137,8 @@ else
   gh pr create \
     --base "${BASE_BRANCH}" \
     --title "${PR_TITLE}" \
-    --body "$(cat <<EOF
+    --body "$(
+      cat <<EOF
 OwnerAgent: ${AGENT}
 TaskBoardVersion: ${TASK_BOARD_VERSION}
 TaskID: ${TASK_ID}
@@ -149,7 +151,6 @@ ImplementationComplete: true
 - [ ] Relevant CI checks pass
 - [ ] Reviewer-agent findings are assigned and resolved
 EOF
-)" \
+    )" \
     ${DRAFT_FLAG}
 fi
-

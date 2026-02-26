@@ -30,7 +30,8 @@ This document defines the automated review board and merge authority contract.
 Lane B must run through the Lane Performance Gate (LPG) contract:
 
 - candidate metrics input in CI is downloaded runtime harness artifact `artifacts/perf/lpg-metrics.json`,
-- CI runtime benchmark production must use a direct harness command (`RUNTIME_HARNESS_CMD`); fixture/bootstrap fallback is forbidden in CI,
+- CI runtime benchmark production must use a direct harness command (`RUNTIME_HARNESS_CMD`); fixture
+  or bootstrap fallback is forbidden in CI,
 - `RUNTIME_HARNESS_CMD` must be configured as repository/org CI variable and is mandatory for `lane-runtime-benchmark`,
 - scenario set and seeds are loaded from threshold source metadata in `docs/pipeline/validation-metrics.md`,
 - metric thresholds are resolved from that same source document (no duplicated constants in scripts),
@@ -138,7 +139,8 @@ This is a behavioral refinement of trigger conditions; it does not remove requir
 
 Promotion must fail if any proof gate fails.
 
-`policy-verdict` also includes a mandatory `lane-branch-governance` lane that enforces repository branch strategy policy for pull requests.
+`policy-verdict` also includes a mandatory `lane-branch-governance` lane that enforces repository
+branch strategy policy for pull requests.
 
 ### Merge-Blocking Failure Conditions
 

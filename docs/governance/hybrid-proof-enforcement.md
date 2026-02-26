@@ -8,7 +8,9 @@ This document defines the tightened hybrid enforcement model:
 
 ## Why This Exists
 
-Rule guidance alone is not sufficient for robust control because it is difficult to prove at review time. This model requires machine-verifiable artifacts and independent CI cross-checks so merges are blocked when evidence is incomplete, inconsistent, or self-asserted without corroboration.
+Rule guidance alone is not sufficient for robust control because it is difficult to prove at review
+time. This model requires machine-verifiable artifacts and independent CI cross-checks so merges are
+blocked when evidence is incomplete, inconsistent, or self-asserted without corroboration.
 
 ## Required Artifacts
 
@@ -112,6 +114,7 @@ The validator set was exercised with synthetic artifacts to confirm fail/pass se
 - Lint scope, suppression lifecycle, and version pinning contract are defined in `docs/governance/linting-policy.md`.
 - Branch strategy enforcement runs as an independent merge-blocking lane in `policy-verdict`.
 - Agent assignment source of truth is `docs/governance/agent-task-board.md`.
-- Reviewer and delivery lanes must validate assignment metadata (`TaskBoardVersion`, `TaskID`, `OwnerAgent`) against that board.
+- Reviewer and delivery lanes must validate assignment metadata (`TaskBoardVersion`, `TaskID`,
+  `OwnerAgent`) against that board.
 - This model does not relax any existing governance thresholds.
 - Schema versions must be incremented with compatibility notes when contracts evolve.

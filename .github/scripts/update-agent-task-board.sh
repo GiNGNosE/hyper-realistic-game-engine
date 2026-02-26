@@ -32,4 +32,3 @@ updated = re.sub(
 board_path.write_text(updated, encoding="utf-8")
 print(f"Updated BoardHash in {board_path}")
 PY
-

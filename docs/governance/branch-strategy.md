@@ -47,7 +47,7 @@ Configure on GitHub for `main`:
 
 - Require a pull request before merging.
 - Require branches to be up to date before merging.
--- Require status checks `policy-verdict`, `reviewer-agent`, `agent-delivery`, and `agent-task-board`.
+- Require status checks `policy-verdict`, `reviewer-agent`, `agent-delivery`, and `agent-task-board`.
 - Require conversation resolution before merge.
 - Block force pushes.
 - Block deletions.
