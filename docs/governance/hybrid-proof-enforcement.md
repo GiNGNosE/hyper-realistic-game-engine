@@ -8,7 +8,10 @@ This document defines the tightened hybrid enforcement model:
 
 ## Why This Exists
 
-Rule guidance alone is not sufficient for robust control because it is difficult to prove at review time. This model requires machine-verifiable artifacts and independent CI cross-checks so merges are blocked when evidence is incomplete, inconsistent, or self-asserted without corroboration.
+Rule guidance alone is not sufficient for robust control because it is difficult
+to prove at review time. This model requires machine-verifiable artifacts and
+independent CI cross-checks so merges are blocked when evidence is incomplete,
+inconsistent, or self-asserted without corroboration.
 
 ## Required Artifacts
 
@@ -90,7 +93,8 @@ Expected outcomes:
 - Ambiguity trigger present and no clarification log -> fail.
 - Clarification entry missing user response -> fail.
 - `pull_request` or `push` with missing target scope -> `missing_target_scope` trigger can activate and may require clarification.
-- `workflow_dispatch` or `schedule` with no changed-path target scope -> no `missing_target_scope` trigger from that condition alone.
+- `workflow_dispatch` or `schedule` with no changed-path target scope ->
+  no `missing_target_scope` trigger from that condition alone.
 - All artifacts valid and cross-consistent -> pass.
 
 ### Local Script Verification (Reference)

@@ -122,7 +122,9 @@ Proof-enforcement must evaluate clarification requirements with CI event context
 
 - `pull_request`, `push` -> target scope is required and `missing_target_scope` may activate.
 - `workflow_dispatch`, `schedule` -> target scope is not required for trigger activation.
-- Current `policy-verdict` workflow entry points are `pull_request`, `workflow_dispatch`, and `schedule`; `push` semantics apply when the validator runs under push-context lanes or harnesses.
+- Current `policy-verdict` workflow entry points are `pull_request`,
+  `workflow_dispatch`, and `schedule`; `push` semantics apply when the validator
+  runs under push-context lanes or harnesses.
 
 `artifacts/policy/clarification-validation.json` remains mandatory proof output and must
 include event-context fields (`event_name`, `target_scope_required`,

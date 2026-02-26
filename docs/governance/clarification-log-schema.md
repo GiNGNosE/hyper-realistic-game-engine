@@ -4,7 +4,8 @@ This contract defines `artifacts/policy/clarification-log.json`.
 
 ## Purpose
 
-`clarification-log.json` provides machine-verifiable evidence that ambiguity was surfaced to the user and resolved before implementation decisions were finalized.
+`clarification-log.json` provides machine-verifiable evidence that ambiguity was
+surfaced to the user and resolved before implementation decisions were finalized.
 
 This artifact is conditionally required: only when CI ambiguity triggers are detected.
 
@@ -70,5 +71,6 @@ from the clarification-log contract.
 
 ## Related Artifacts
 
-- `artifacts/policy/ambiguity-triggers.json`: produced by CI trigger detector and treated as source of truth for whether clarification is mandatory.
+- `artifacts/policy/ambiguity-triggers.json`: produced by CI trigger detector and
+  treated as source of truth for whether clarification is mandatory.
 - `artifacts/policy/clarification-log.json`: agent-provided clarification proof.
