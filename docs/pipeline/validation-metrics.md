@@ -78,6 +78,15 @@ All scenarios must run with fixed seeds and fixed boundary conditions.
 - `D3_RunToRunVariance`:
   - Variance budget across repeated identical runs.
 
+## Runtime Performance Metrics
+
+- `R1_RuntimeMedianMs`:
+  - Median frame/step time for the active benchmark scenario set.
+- `R2_RuntimeP95Ms`:
+  - P95 frame/step time for the active benchmark scenario set.
+
+Runtime metrics are enforced by LPG and are reported alongside quality metrics; promotion requires both groups to pass.
+
 ## Phase Gates
 
 Phase gate thresholds in this file are necessary but not sufficient for promotion. Promotion also requires governance artifact compliance under `policy-verdict`.
@@ -144,3 +153,174 @@ Each evaluation run must emit:
 - Run reduced smoke suite on every substantial solver/material change.
 - Lock accepted baselines and version them with snapshot schema version.
 - Use deterministic replay and performance lanes as separate CI environments for stable enforcement.
+
+## LPG Machine-Readable Threshold Contract
+
+This embedded contract is the machine source for LPG threshold evaluation.
+CI must resolve Lane Performance Gate thresholds from this block.
+CI candidate metrics input for LPG is expected at `artifacts/perf/lpg-metrics.json` and must preserve the existing LPG schema contract (`phase`, `scenario_set_id`, `aggregate_metrics`, `scenario_runs`, `environment_fingerprint`).
+In CI, runtime metrics must come from direct harness execution only; fixture/bootstrap fallback is not permitted.
+
+<!-- LPG_THRESHOLDS_BEGIN -->
+```json
+{
+  "schema_version": "lpg-thresholds-v1",
+  "scenario_sets": {
+    "canonical-s1-s3": {
+      "scenario_ids": [
+        "S1_LightTap",
+        "S2_ChiselImpact",
+        "S3_HeavyDrop"
+      ],
+      "seeds": {
+        "S1_LightTap": 101,
+        "S2_ChiselImpact": 202,
+        "S3_HeavyDrop": 303
+      }
+    }
+  },
+  "phases": {
+    "pre-phase-0": {
+      "scenario_set": "canonical-s1-s3",
+      "required_metrics": {
+        "D1_ReplayHashMatchRate": {
+          "scope": "aggregate",
+          "comparator": "eq",
+          "value": 100.0
+        },
+        "runtime_median_ms": {
+          "scope": "aggregate",
+          "comparator": "lte",
+          "value": 20.0
+        },
+        "runtime_p95_ms": {
+          "scope": "aggregate",
+          "comparator": "lte",
+          "value": 28.0
+        }
+      }
+    },
+    "phase-1": {
+      "scenario_set": "canonical-s1-s3",
+      "required_metrics": {
+        "D1_ReplayHashMatchRate": {
+          "scope": "aggregate",
+          "comparator": "eq",
+          "value": 100.0
+        },
+        "M4_EnergyBalanceError": {
+          "scope": "aggregate",
+          "comparator": "lte",
+          "value": 0.05
+        },
+        "M5_FragmentCountStability": {
+          "scope": "aggregate",
+          "comparator": "eq",
+          "value": 0.0
+        },
+        "M3_CrackOrientationError": {
+          "scope": "aggregate",
+          "comparator": "lte",
+          "value": 12.0
+        },
+        "runtime_median_ms": {
+          "scope": "aggregate",
+          "comparator": "lte",
+          "value": 18.0
+        },
+        "runtime_p95_ms": {
+          "scope": "aggregate",
+          "comparator": "lte",
+          "value": 25.0
+        }
+      }
+    },
+    "phase-2": {
+      "scenario_set": "canonical-s1-s3",
+      "required_metrics": {
+        "D1_ReplayHashMatchRate": {
+          "scope": "aggregate",
+          "comparator": "eq",
+          "value": 100.0
+        },
+        "V2_NormalAngularError": {
+          "scope": "aggregate",
+          "comparator": "lte",
+          "value": 8.0
+        },
+        "A2_TransientOnsetErrorMs": {
+          "scope": "aggregate",
+          "comparator": "lte",
+          "value": 8.0
+        },
+        "A4_BandEnergyError": {
+          "scope": "aggregate",
+          "comparator": "lte",
+          "value": 2.5
+        },
+        "runtime_median_ms": {
+          "scope": "aggregate",
+          "comparator": "lte",
+          "value": 16.0
+        },
+        "runtime_p95_ms": {
+          "scope": "aggregate",
+          "comparator": "lte",
+          "value": 23.0
+        }
+      }
+    },
+    "phase-3": {
+      "scenario_set": "canonical-s1-s3",
+      "required_metrics": {
+        "D1_ReplayHashMatchRate": {
+          "scope": "aggregate",
+          "comparator": "eq",
+          "value": 100.0
+        },
+        "D2_EventStreamMatchRate": {
+          "scope": "aggregate",
+          "comparator": "eq",
+          "value": 100.0
+        },
+        "runtime_median_ms": {
+          "scope": "aggregate",
+          "comparator": "lte",
+          "value": 14.0
+        },
+        "runtime_p95_ms": {
+          "scope": "aggregate",
+          "comparator": "lte",
+          "value": 20.0
+        }
+      }
+    },
+    "phase-4": {
+      "scenario_set": "canonical-s1-s3",
+      "required_metrics": {
+        "D1_ReplayHashMatchRate": {
+          "scope": "aggregate",
+          "comparator": "eq",
+          "value": 100.0
+        },
+        "D2_EventStreamMatchRate": {
+          "scope": "aggregate",
+          "comparator": "eq",
+          "value": 100.0
+        },
+        "runtime_median_ms": {
+          "scope": "aggregate",
+          "comparator": "lte",
+          "value": 12.0
+        },
+        "runtime_p95_ms": {
+          "scope": "aggregate",
+          "comparator": "lte",
+          "value": 18.0
+        }
+      }
+    }
+  }
+}
+```
+<!-- LPG_THRESHOLDS_END -->

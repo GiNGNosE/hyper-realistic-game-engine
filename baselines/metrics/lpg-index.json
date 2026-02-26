@@ -1,0 +1,22 @@
+{
+  "active_baseline_id": "lpg-baseline-pre-phase-0-v1",
+  "baselines": [
+    {
+      "artifact_checksum_sha256": "6e40160b1cc1c30225da102a4c13bd8a7b79776942f636a7c4f48646669acb5f",
+      "baseline_id": "lpg-baseline-pre-phase-0-v1",
+      "created_on": "2026-02-27",
+      "environment_class": "perf-stable-runner",
+      "lineage_note": "root baseline for LPG governance harness",
+      "metrics_path": "baselines/metrics/lpg-baseline-pre-phase-0-v1.json",
+      "parent_baseline_id": null,
+      "phase": "pre-phase-0",
+      "scenario_set_id": "canonical-s1-s3",
+      "seeds": [
+        101,
+        202,
+        303
+      ]
+    }
+  ],
+  "schema_version": "lpg-baseline-index-v1"
+}

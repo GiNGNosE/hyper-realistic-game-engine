@@ -1,0 +1,47 @@
+{
+  "aggregate_metrics": {
+    "D1_ReplayHashMatchRate": 100.0,
+    "runtime_median_ms": 15.0,
+    "runtime_p95_ms": 22.0
+  },
+  "environment_fingerprint": {
+    "compiler_toolchain_id": "clang-18",
+    "cpu_class": "github-hosted-standard-x86_64",
+    "gpu_class": "n/a-cpu-only-governance-fixture",
+    "key_build_flags": "-O2 -DNDEBUG",
+    "os_runtime_signature": "ubuntu-latest-governance-fixture",
+    "perf_profile_id": "policy-lpg-fixture-v1"
+  },
+  "phase": "pre-phase-0",
+  "scenario_runs": [
+    {
+      "metrics": {
+        "D1_ReplayHashMatchRate": 100.0,
+        "runtime_median_ms": 13.0,
+        "runtime_p95_ms": 19.0
+      },
+      "scenario_id": "S1_LightTap",
+      "seed": 101
+    },
+    {
+      "metrics": {
+        "D1_ReplayHashMatchRate": 100.0,
+        "runtime_median_ms": 15.0,
+        "runtime_p95_ms": 22.0
+      },
+      "scenario_id": "S2_ChiselImpact",
+      "seed": 202
+    },
+    {
+      "metrics": {
+        "D1_ReplayHashMatchRate": 100.0,
+        "runtime_median_ms": 17.0,
+        "runtime_p95_ms": 25.0
+      },
+      "scenario_id": "S3_HeavyDrop",
+      "seed": 303
+    }
+  ],
+  "scenario_set_id": "canonical-s1-s3",
+  "schema_version": "lpg-metrics-v1"
+}
