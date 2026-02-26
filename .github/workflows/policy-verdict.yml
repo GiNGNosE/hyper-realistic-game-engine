@@ -159,6 +159,20 @@ jobs:
           name: lane-proof-enforcement
           path: artifacts/policy/*.json
 
+  clarification-event-gating-guardrail:
+    name: clarification-event-gating-guardrail
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate clarification event-gating regression guardrail
+        run: .github/scripts/validate-clarification-event-gating.sh
+      - name: Upload clarification guardrail artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lane-clarification-event-gating-guardrail
+          path: artifacts/policy/clarification-event-gating-guardrail.json
+
   lane-branch-governance:
     name: lane-branch-governance
     runs-on: ubuntu-latest
@@ -199,6 +213,7 @@ jobs:
       - lane-correctness
       - lane-performance
       - proof-enforcement
+      - clarification-event-gating-guardrail
       - lane-branch-governance
       - lane-pr-template-governance
     steps:
@@ -209,6 +224,7 @@ jobs:
           CORRECTNESS_STATUS="${{ needs.lane-correctness.result }}"
           PERFORMANCE_STATUS="${{ needs.lane-performance.result }}"
           PROOF_STATUS="${{ needs.proof-enforcement.result }}"
+          CLARIFICATION_GUARDRAIL_STATUS="${{ needs.clarification-event-gating-guardrail.result }}"
           BRANCH_GOVERNANCE_STATUS="${{ needs.lane-branch-governance.result }}"
           PR_TEMPLATE_STATUS="${{ needs.lane-pr-template-governance.result }}"
           IS_PULL_REQUEST_EVENT="${{ github.event_name == 'pull_request' }}"
@@ -229,6 +245,7 @@ jobs:
                 "${CORRECTNESS_STATUS}" == "success" &&
                 "${PERFORMANCE_STATUS}" == "success" &&
                 "${PROOF_STATUS}" == "success" &&
+                "${CLARIFICATION_GUARDRAIL_STATUS}" == "success" &&
                 "${BRANCH_GOVERNANCE_STATUS}" == "success" &&
                 "${PR_TEMPLATE_GATE_OK}" == "true" ]]; then
             VERDICT="pass"
@@ -245,6 +262,7 @@ jobs:
               "lane-correctness": "${CORRECTNESS_STATUS}",
               "lane-performance": "${PERFORMANCE_STATUS}",
               "proof-enforcement": "${PROOF_STATUS}",
+              "clarification-event-gating-guardrail": "${CLARIFICATION_GUARDRAIL_STATUS}",
               "lane-branch-governance": "${BRANCH_GOVERNANCE_STATUS}",
               "lane-pr-template-governance": "${PR_TEMPLATE_STATUS}"
             }
