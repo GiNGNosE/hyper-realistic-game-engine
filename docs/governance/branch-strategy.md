@@ -65,7 +65,9 @@ Both layers are required: CI enforces branch semantics, while platform ruleset b
 Configure on GitHub for `main`:
 
 - Require a pull request before merging.
+- Keep solo-mode approvals at `0` required approvals.
 - Require branches to be up to date before merging.
+- Require conversation resolution before merge.
 - Require status check `policy-verdict`.
 - Block force pushes.
 - Block deletions.
@@ -83,6 +85,15 @@ Canonical desired settings are tracked in `.github/rulesets/main-protected-trunk
 Apply settings through:
 
 - `GITHUB_REPOSITORY=<owner/repo> .github/scripts/configure-main-branch-protection.sh`
+
+## Solo-Mode Review Rationale
+
+- This repository currently operates with a single maintainer, so required approvals are set to `0`
+  to avoid self-review deadlocks.
+- Merge safety remains enforced through required `policy-verdict` checks, up-to-date branch
+  requirement, and bypass restrictions.
+- When regular collaborators join, raise required approvals (for example to `1`) in
+  `.github/rulesets/main-protected-trunk.json` and re-apply protection.
 
 ## Rollout
 
