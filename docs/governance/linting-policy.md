@@ -4,7 +4,8 @@ This document defines the mandatory lint strategy for repository quality gates.
 
 ## Purpose
 
-The lint program is designed to keep long-term maintainability high while preserving deterministic, performance-critical engineering constraints.
+The lint program is designed to keep long-term maintainability high while preserving deterministic
+and performance-critical engineering constraints.
 
 ## Scope
 
@@ -19,13 +20,13 @@ Lint enforcement applies to changed files in pull requests using these path clas
 
 The CI lane must install and run the exact pinned versions declared in the workflow environment:
 
-- `clang-tidy` (pinned LLVM major)
-- `clang-format` (pinned LLVM major)
-- `shellcheck`
-- `shfmt`
-- `actionlint`
-- `yamllint`
-- `markdownlint-cli2`
+- `clang-tidy`: LLVM major `18`
+- `clang-format`: LLVM major `18`
+- `shellcheck`: `0.11.0`
+- `shfmt`: `3.12.0`
+- `actionlint`: `1.7.11`
+- `yamllint`: `1.38.0`
+- `markdownlint-cli2`: `0.21.0`
 
 Tool versions are emitted to artifacts and checked against workflow pin values.
 
@@ -89,6 +90,11 @@ This command mirrors CI logic and writes the same policy artifacts.
 2. Run lint suite and compare before/after outcomes.
 3. Update this policy document with rationale and impact.
 4. Record any required suppression adjustments with expiry.
+
+Current stable update rationale:
+
+- Align local developer setup with newest stable releases to reduce version drift.
+- Keep CI pins explicit and deterministic while using modern tool behavior.
 
 ## Verification Scenarios
 

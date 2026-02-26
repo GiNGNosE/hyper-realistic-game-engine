@@ -2,8 +2,6 @@
 set -euo pipefail
 
 mkdir -p artifacts/policy
-
-PHASE="${POLICY_PHASE:-pre-phase-0}"
 EVENT_PATH="${GITHUB_EVENT_PATH:-}"
 HEAD_SHA="${GITHUB_SHA:-}"
 if [[ -z "${HEAD_SHA}" ]]; then
@@ -12,7 +10,8 @@ fi
 
 BASE_SHA=""
 if [[ -n "${EVENT_PATH}" && -f "${EVENT_PATH}" ]]; then
-  BASE_SHA="$(python3 - <<'PY'
+  BASE_SHA="$(
+    python3 - <<'PY'
 import json
 import os
 
@@ -35,13 +34,17 @@ base = (
 )
 print(base or "")
 PY
-)"
+  )"
 fi
 
 if [[ -n "${BASE_SHA}" && -n "${HEAD_SHA}" ]]; then
-  git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" | sed '/^$/d' > artifacts/policy/changed-paths.txt
+  git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" | sed '/^$/d' >artifacts/policy/changed-paths.txt
 else
-  git ls-files > artifacts/policy/changed-paths.txt
+  {
+    git diff --name-only
+    git diff --cached --name-only
+    git ls-files --others --exclude-standard
+  } | sed '/^$/d' | sort -u >artifacts/policy/changed-paths.txt
 fi
 
 python3 - <<'PY'

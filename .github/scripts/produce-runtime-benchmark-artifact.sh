@@ -3,7 +3,6 @@ set -euo pipefail
 
 OUTPUT_PATH="${LPG_RUNTIME_OUTPUT:-artifacts/perf/lpg-metrics.json}"
 OUTPUT_DIR="$(dirname "${OUTPUT_PATH}")"
-PHASE="${POLICY_PHASE:-pre-phase-0}"
 IS_CI="${GITHUB_ACTIONS:-false}"
 HARNESS_CMD="${RUNTIME_HARNESS_CMD:-}"
 CANONICAL_OUTPUT="artifacts/perf/lpg-metrics.json"
