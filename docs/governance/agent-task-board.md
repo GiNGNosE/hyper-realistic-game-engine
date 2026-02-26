@@ -3,7 +3,7 @@
 <!-- markdownlint-disable MD022 MD024 -->
 
 BoardVersion: 2026-02-27.2
-BoardHash: 770381be0eada6b67cc810025b81e172d156b3e093b6b876a1ab4727a2d897b8
+BoardHash: d30e4a470ed3bed3b87e6d4fd0b2f788f11cc1db617e2b165d2ff6dda7c91729
 ## ActiveTasks
 
 ### Task
@@ -46,7 +46,8 @@ ScopePaths:
 Acceptance:
 
 - Trigger/event and completion lifecycle mapping is explicitly documented for scoped and unscoped contexts.
-- Soft-archive completion semantics are documented: agents set `Status: done`; orchestrator removes completed tasks after merge.
+- Soft-archive completion semantics are documented:
+  agents set `Status: done`; orchestrator removes completed tasks after merge.
 - Compatibility note states behavior refinement (no schema field removal) and no change to required PR metadata keys.
 
 EvidenceArtifacts:
@@ -74,8 +75,10 @@ ScopePaths:
 Acceptance:
 
 - Reviewer findings must carry valid `owner_agent`.
-- PR delivery metadata must include `TaskBoardVersion`, `TaskID`, and `OwnerAgent` and match board ownership with lifecycle-aware task status validation.
-- Task board validator enforces schema/hash integrity and completion lifecycle semantics without requiring immediate task deletion.
+- PR delivery metadata must include `TaskBoardVersion`, `TaskID`, and `OwnerAgent`
+  and match board ownership with lifecycle-aware task status validation.
+- Task board validator enforces schema/hash integrity and completion lifecycle semantics
+  without requiring immediate task deletion.
 
 EvidenceArtifacts:
 
@@ -88,4 +91,6 @@ EvidenceArtifacts:
 - Orchestrator and reviewer update assignments in this file only.
 - Agents must reference `TaskBoardVersion` and `TaskID` in PR body metadata.
 - When a task transitions to `done`, the owner agent must commit, push, and open or update the PR in the same cycle.
-- Soft-archive lifecycle applies: completed tasks remain on the board with `Status: done` until the orchestrator removes them after merge.
+- Soft-archive lifecycle applies:
+  completed tasks remain on the board with `Status: done`
+  until the orchestrator removes them after merge.
