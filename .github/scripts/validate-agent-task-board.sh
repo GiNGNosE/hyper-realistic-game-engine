@@ -19,6 +19,7 @@ checks = {
     "owner_agents_valid": "pass",
     "task_ids_unique": "pass",
     "status_values_valid": "pass",
+    "completion_lifecycle_policy_valid": "pass",
     "board_hash_matches": "pass",
 }
 
@@ -140,6 +141,16 @@ invalid_status = [t["task_id"] for t in tasks if t["status"] not in allowed_stat
 if invalid_status:
     checks["status_values_valid"] = "fail"
     errors.append("Invalid Status for task(s): " + ", ".join(invalid_status))
+
+done_tasks = [t["task_id"] for t in tasks if t["status"] == "done"]
+soft_archive_note = (
+    "Soft-archive lifecycle applies: completed tasks remain on the board with `Status: done` until the orchestrator removes them after merge."
+)
+if done_tasks and soft_archive_note not in content:
+    checks["completion_lifecycle_policy_valid"] = "fail"
+    errors.append(
+        "Done tasks require soft-archive dispatch note explaining orchestrator removal after merge"
+    )
 
 payload = {
     "status": "pass" if not errors else "fail",

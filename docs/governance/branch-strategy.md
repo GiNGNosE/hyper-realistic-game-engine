@@ -86,6 +86,12 @@ Merge-blocking checks enforce compliance:
 
 Agents must read and execute only tasks assigned to their `OwnerAgent` entries in the task board.
 
+Task completion lifecycle is soft-archive:
+
+- Owner agents set `Status: done` when implementation is complete and submit/update their PR in the same cycle.
+- Completed tasks remain in `docs/governance/agent-task-board.md` until orchestrator cleanup after merge.
+- Agents must not remove their own completed task blocks from the task board.
+
 ## Agent Auto-Submit Contract
 
 Agent implementation branches must use:

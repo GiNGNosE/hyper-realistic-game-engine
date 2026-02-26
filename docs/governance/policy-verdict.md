@@ -66,6 +66,8 @@ Lane B must run through the Lane Performance Gate (LPG) contract:
 - CI job `agent-task-board` validates `docs/governance/agent-task-board.md` schema and hash integrity.
 - `agent-task-board` emits `artifacts/policy/agent-task-board-validation.json`.
 - Any board schema/hash mismatch is merge-blocking.
+- Completion lifecycle is soft-archive: tasks may remain with `Status: done` until orchestrator cleanup after merge.
+- `agent-delivery` must reject PR metadata that references a `cancelled` task.
 
 ## Threshold Source of Truth
 
