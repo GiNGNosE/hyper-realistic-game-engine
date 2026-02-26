@@ -1,0 +1,68 @@
+{
+  "event_name": "pull_request",
+  "inputs": {
+    "artifacts/policy/acceptance-criteria.json": {
+      "json": {
+        "present": true
+      }
+    },
+    "artifacts/policy/clarification-log.json": {
+      "json": {
+        "ambiguities": [
+          {
+            "ambiguity_id": "",
+            "detected_issue": "issue text",
+            "question_asked": "question text",
+            "resolved_at": "2026-02-27T00:00:00Z",
+            "resolved_decision": "decision text",
+            "trigger_type": "missing_target_scope",
+            "user_response": 42
+          }
+        ],
+        "commit_id": "abc123",
+        "schema_version": "1.0.0",
+        "task_id": "TB-008"
+      }
+    },
+    "artifacts/policy/governance-conflicts.json": {
+      "json": {
+        "active_conflicts": 0
+      }
+    },
+    "artifacts/policy/implementation-options.json": {
+      "json": {
+        "candidates": [
+          "single"
+        ],
+        "selected_option": "single"
+      }
+    },
+    "artifacts/policy/required-rules.json": {
+      "json": {
+        "changed_paths": [
+          "docs/governance/policy-verdict.md"
+        ]
+      }
+    },
+    "artifacts/policy/rule-read-receipt.json": {
+      "json": {
+        "changed_paths": []
+      }
+    }
+  },
+  "expect": {
+    "contains_errors": [
+      "ambiguities[0].ambiguity_id must be a non-empty string",
+      "ambiguities[0].user_response must be a non-empty string"
+    ],
+    "contains_trigger_types": [
+      "missing_target_scope"
+    ],
+    "exit_code": 1,
+    "required_clarification": true,
+    "status": "fail",
+    "target_scope_required": true,
+    "validation_artifact_present": true
+  },
+  "scenario_id": "scoped-partial-ambiguity-entry-types"
+}
