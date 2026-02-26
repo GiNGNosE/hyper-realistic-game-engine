@@ -4,7 +4,9 @@ This document defines how the project is steered over a decade while preserving 
 
 ## Baseline Assessment (v4 gap)
 
-Current governance in `cpp_solo_governance_v4` is strong at merge-time enforcement, but it does not fully specify long-horizon operating rhythm. The gap is not technical correctness; the gap is decade-scale execution control.
+Current governance in `cpp_solo_governance_v4` is strong at merge-time
+enforcement, but it does not fully specify long-horizon operating rhythm. The
+gap is not technical correctness; the gap is decade-scale execution control.
 
 ## Dual-Objective Charter (Non-Negotiable)
 
@@ -13,7 +15,8 @@ Every planning and promotion decision must satisfy both objectives:
 - scientific-grade fidelity and determinism,
 - high real-time performance.
 
-Neither objective can be traded away for short-term progress. If one objective regresses, the cycle is not considered successful.
+Neither objective can be traded away for short-term progress. If one objective
+regresses, the cycle is not considered successful.
 
 ## Timeboxed Planning Model
 

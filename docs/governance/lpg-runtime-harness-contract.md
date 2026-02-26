@@ -17,11 +17,19 @@ Recommended in-repo entrypoint:
 
 Recommended `RUNTIME_HARNESS_CMD` shape:
 
-- `./tools/runtime-harness/run-benchmark.sh --phase "${POLICY_PHASE}" --scenario-set "canonical-s1-s3" --output "artifacts/perf/lpg-metrics.json" --backend-cmd "./build/runtime/lpg-runtime-benchmark --phase ${POLICY_PHASE} --scenario-set canonical-s1-s3 --output artifacts/perf/lpg-metrics.json"`
+- `RUNTIME_HARNESS_CMD` example:
+
+  ```shell
+  ./tools/runtime-harness/run-benchmark.sh --phase "${POLICY_PHASE}" --scenario-set "canonical-s1-s3" --output "artifacts/perf/lpg-metrics.json" --backend-cmd "./build/runtime/lpg-runtime-benchmark --phase ${POLICY_PHASE} --scenario-set canonical-s1-s3 --output artifacts/perf/lpg-metrics.json"
+  ```
 
 Current backend build step (local/CI command pre-step):
 
-- `cmake -S runtime -B build/runtime -DCMAKE_BUILD_TYPE=Release && cmake --build build/runtime --config Release --target lpg-runtime-benchmark`
+- Build command:
+
+  ```shell
+  cmake -S runtime -B build/runtime -DCMAKE_BUILD_TYPE=Release && cmake --build build/runtime --config Release --target lpg-runtime-benchmark
+  ```
 
 Entrypoint rules:
 
@@ -141,7 +149,12 @@ Current phase gate expectations also require:
 ### Local Contract Check
 
 1. Run harness command with explicit backend command:
-   - `bash tools/runtime-harness/run-benchmark.sh --phase pre-phase-0 --scenario-set canonical-s1-s3 --output artifacts/perf/lpg-metrics.json --backend-cmd "./build/runtime/lpg-runtime-benchmark --phase pre-phase-0 --scenario-set canonical-s1-s3 --output artifacts/perf/lpg-metrics.json"`
+   - Example:
+
+     ```shell
+     bash tools/runtime-harness/run-benchmark.sh --phase pre-phase-0 --scenario-set canonical-s1-s3 --output artifacts/perf/lpg-metrics.json --backend-cmd "./build/runtime/lpg-runtime-benchmark --phase pre-phase-0 --scenario-set canonical-s1-s3 --output artifacts/perf/lpg-metrics.json"
+     ```
+
 2. Confirm success behavior:
    - command exits `0`,
    - output confirms payload contract validation succeeded.

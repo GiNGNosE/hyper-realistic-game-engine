@@ -20,6 +20,9 @@ blocked when evidence is incomplete, inconsistent, or self-asserted without corr
 - `artifacts/policy/rule-inventory-hash.txt`
 - `artifacts/policy/ambiguity-triggers.json`
 - `artifacts/policy/clarification-log.json` (required only when triggers are present)
+- `artifacts/policy/clarification-validation.json`
+- `artifacts/policy/clarification-event-gating-guardrail.json`
+- `artifacts/policy/clarification-validation-matrix.json`
 - `artifacts/policy/lane-branch-governance.json`
 - `artifacts/policy/lint-summary.json`
 - `artifacts/policy/lint-tool-versions.json`
@@ -118,5 +121,7 @@ The validator set was exercised with synthetic artifacts to confirm fail/pass se
   `OwnerAgent`) against that board.
 - Clarification event-gating semantics are protected by a dedicated deterministic CI guardrail
   artifact at `artifacts/policy/clarification-event-gating-guardrail.json`.
+- Clarification validator behavior is regression-tested by `clarification-validation-matrix`,
+  which emits `artifacts/policy/clarification-validation-matrix.json`.
 - This model does not relax any existing governance thresholds.
 - Schema versions must be incremented with compatibility notes when contracts evolve.

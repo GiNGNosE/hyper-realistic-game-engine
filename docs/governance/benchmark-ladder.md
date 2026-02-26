@@ -14,11 +14,24 @@ Use currently accepted thresholds in `docs/pipeline/validation-metrics.md` and c
 
 ## Ladder Template (per year)
 
-| Year | Fidelity Ratchet | Determinism Ratchet | Runtime Ratchet | Promotion Condition |
-|---|---|---|---|---|
-| Y1 | Tighten at least one of `M*` or `V*` | Keep `D1 = 100%`, reduce tolerated variance budget | Improve median frame time or throughput target by measurable margin | All gates pass plus no red risks at cycle close |
-| Y2 | Tighten at least two metrics across physics/render/audio | Preserve exact replay parity and narrower variance envelope | Improve P95 performance budget and stability | Same as Y1 |
-| Y3+ | Continue monotonic tightening with documented rationale | No determinism regressions accepted | Continue monotonic runtime improvement | Same as Y1 |
+- `Y1`
+  - Fidelity ratchet: tighten at least one of `M*` or `V*`.
+  - Determinism ratchet: keep `D1 = 100%` and reduce tolerated variance budget.
+  - Runtime ratchet: improve median frame time or throughput target by
+    measurable margin.
+  - Promotion condition: all gates pass and no red risks at cycle close.
+- `Y2`
+  - Fidelity ratchet: tighten at least two metrics across
+    physics/render/audio.
+  - Determinism ratchet: preserve exact replay parity with a narrower variance
+    envelope.
+  - Runtime ratchet: improve P95 performance budget and stability.
+  - Promotion condition: same as Y1.
+- `Y3+`
+  - Fidelity ratchet: continue monotonic tightening with documented rationale.
+  - Determinism ratchet: no determinism regressions accepted.
+  - Runtime ratchet: continue monotonic runtime improvement.
+  - Promotion condition: same as Y1.
 
 ## Measurement Discipline
 
@@ -31,7 +44,8 @@ Use currently accepted thresholds in `docs/pipeline/validation-metrics.md` and c
   - `artifacts/policy/lane-performance-risk-signals.json`.
   - `artifacts/policy/lpg-trend-report.json`.
 
-Weekly drift review must consume the latest LPG trend report and update cycle notes when pass/fail streaks or runtime trends indicate regression risk.
+Weekly drift review must consume the latest LPG trend report and update cycle
+notes when pass/fail streaks or runtime trends indicate regression risk.
 Use `artifacts/policy/lpg-artifact-review.json` as the machine-generated triage input for weekly review.
 
 ## Failure Handling

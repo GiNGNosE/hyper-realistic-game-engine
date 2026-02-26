@@ -4,7 +4,8 @@ Use ADRs to preserve decision history across long timelines.
 
 ## ADR Policy
 
-- Create an ADR for any decision that changes interfaces, data contracts, determinism model, baseline policy, or performance architecture.
+- Create an ADR for any decision that changes interfaces, data contracts,
+  determinism model, baseline policy, or performance architecture.
 - ADRs are immutable after acceptance except for appending supersession notes.
 - Each evidence pack must list ADR IDs touched in that cycle.
 
@@ -17,9 +18,9 @@ Use ADRs to preserve decision history across long timelines.
 
 ## Index Table
 
-| ADR ID | Title | Status | Date | Supersedes | Affected Areas |
+|ADR ID|Title|Status|Date|Supersedes|Affected Areas|
 |---|---|---|---|---|---|
-| ADR-0001 | Dual Objective Charter | accepted | 2026-02-26 | - | governance, validation, runtime |
+|ADR-0001|Dual Objective Charter|accepted|2026-02-26|-|governance, validation, runtime|
 
 ## Required ADR Sections
 

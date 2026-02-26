@@ -4,7 +4,10 @@ This contract defines `artifacts/policy/rule-read-receipt.json`.
 
 ## Purpose
 
-`rule-read-receipt.json` is the agent-side declaration that active governance rules were read and applied for the current task context. CI treats this artifact as required but not self-authoritative: every key field is independently cross-checked.
+`rule-read-receipt.json` is the agent-side declaration that active governance
+rules were read and applied for the current task context. CI treats this
+artifact as required but not self-authoritative: every key field is
+independently cross-checked.
 
 ## Required Fields
 
@@ -31,7 +34,8 @@ Validation semantics:
 - `rule_id` must be unique within `applied_rules`.
 - `evidence_note` must be non-empty and specific:
   - minimum length 24 characters,
-  - must contain at least one policy keyword (`must`, `must not`, `required evidence`, `reject`, `gate`, `artifact`, or `phase`),
+  - must contain at least one policy keyword (`must`, `must not`,
+    `required evidence`, `reject`, `gate`, `artifact`, or `phase`),
   - generic placeholders fail (for example `read and followed`, `n/a`, `ok`, `done`).
 
 ## Cross-Validation Requirements

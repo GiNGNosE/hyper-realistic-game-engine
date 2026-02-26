@@ -27,26 +27,31 @@ Technical contracts defined here are consumed by governance checks; policy mecha
 ### 1) Material Authoring and PBSV Builder
 
 Inputs:
+
 - scanned/procedural stone source geometry,
 - mineral composition priors,
 - calibration samples.
 
 Outputs:
+
 - sparse voxel material channels,
 - anisotropic property tensors,
 - initial damage/microcrack fields.
 
 Contract:
+
 - must produce schema-compliant state described in `material-schema.md`.
 
 ### 2) Fracture Truth Solver
 
 Core:
+
 - MLS-MPM/APIC with displacement discontinuity handling.
 - Narrow-band anisotropic SDF for crack-front localization.
 - Local graph-of-grains refinement around active fronts.
 
 Outputs:
+
 - immutable snapshots at configured cadence,
 - fracture/contact event streams,
 - fragment and crack-surface derived data.
@@ -54,9 +59,11 @@ Outputs:
 ### 3) Render Truth Pipeline (Offline)
 
 Goal:
+
 - produce visual ground truth for intact and fractured states.
 
 Stages:
+
 1. Snapshot-to-geometry extraction:
    - generate crack surfaces and exposed internals,
    - reconstruct fragment surface detail at multi-scale.
@@ -68,6 +75,7 @@ Stages:
    - optional turntable sequences for temporal evaluation.
 
 Outputs:
+
 - high-sample reference frames,
 - per-pass AOVs for diagnostics (`albedo`, `normal`, `depth`, `roughness`, `emission`),
 - reference videos for side-by-side surrogate comparison.
@@ -75,9 +83,11 @@ Outputs:
 ### 4) Audio Truth Pipeline (Offline)
 
 Goal:
+
 - generate impact and fracture sound from physical state/events.
 
 Stages:
+
 1. Modal basis extraction:
    - derive local modal features from fragment geometry/material state.
 2. Event-conditioned excitation:
@@ -90,6 +100,7 @@ Stages:
    - emit dry stems and fully spatialized master.
 
 Outputs:
+
 - synchronized wave files for `impact`, `crack`, `debris`, `ambience`,
 - metadata sidecar linking each audio segment to snapshot/event ids.
 

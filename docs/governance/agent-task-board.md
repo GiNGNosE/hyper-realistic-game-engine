@@ -77,3 +77,50 @@ EvidenceArtifacts:
 
 - Orchestrator and reviewer update assignments in this file only.
 - Agents must reference `TaskBoardVersion` and `TaskID` in PR body metadata.
+
+## Task Board Update Protocol
+
+### Step 1: Prepare Assignment Change
+
+- Open a dedicated branch for board updates (recommended: `gov/task-board-<date>`).
+- Change task ownership/status only in `docs/governance/agent-task-board.md`.
+- Increment `BoardVersion` for every assignment or scope change.
+- Regenerate `BoardHash` using the repository validator before opening the PR.
+
+### Step 2: Merge Board First
+
+- Submit a board-only PR (no implementation files mixed in).
+- Require `agent-task-board` validation and related governance checks to pass.
+- Merge board PR before any agent implementation PRs start or continue.
+
+### Step 3: Agent Sync Gate (Mandatory)
+
+- Before implementation, every agent worktree must run:
+  - `git fetch origin`
+  - `git rebase origin/main`
+- If rebase fails, resolve conflicts first; do not continue implementation on stale assignments.
+
+### Step 4: Implementation Contract
+
+- Each agent works only on tasks where `OwnerAgent` matches the agent identity.
+- PR metadata must include:
+  - `TaskBoardVersion`
+  - `TaskID`
+  - `OwnerAgent`
+- PR title and commit prefixes must match the assigned owner agent policy.
+
+### Step 5: Reassignment Rule
+
+- If scope changes or work must move agents, update the board in a new board-only PR first.
+- Do not hand off work through comments/chat alone; assignment is official only after board merge.
+
+### Step 6: Pre-Merge Verification
+
+- Rebase implementation branches on latest `origin/main` before final merge.
+- Confirm `agent-delivery`, `reviewer-agent`, `agent-task-board`, and `policy-verdict` are green.
+- If any gate fails due to assignment mismatch, update board first, then rerun checks.
+
+### Step 7: Audit Trail
+
+- Keep old tasks by status transition (`assigned` -> `in_progress` -> `completed`) instead of deleting immediately.
+- Include a short DispatchNotes entry for why a reassignment happened.

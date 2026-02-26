@@ -89,7 +89,9 @@ Runtime metrics are enforced by LPG and are reported alongside quality metrics; 
 
 ## Phase Gates
 
-Phase gate thresholds in this file are necessary but not sufficient for promotion. Promotion also requires governance artifact compliance under `policy-verdict`.
+Phase gate thresholds in this file are necessary but not sufficient for
+promotion. Promotion also requires governance artifact compliance under
+`policy-verdict`.
 
 ### Phase 0 Gate (Infrastructure Ready)
 
@@ -158,7 +160,10 @@ Each evaluation run must emit:
 
 This embedded contract is the machine source for LPG threshold evaluation.
 CI must resolve Lane Performance Gate thresholds from this block.
-CI candidate metrics input for LPG is expected at `artifacts/perf/lpg-metrics.json` and must preserve the existing LPG schema contract (`phase`, `scenario_set_id`, `aggregate_metrics`, `scenario_runs`, `environment_fingerprint`).
+CI candidate metrics input for LPG is expected at
+`artifacts/perf/lpg-metrics.json` and must preserve the existing LPG schema
+contract (`phase`, `scenario_set_id`, `aggregate_metrics`, `scenario_runs`,
+`environment_fingerprint`).
 In CI, runtime metrics must come from direct harness execution only; fixture/bootstrap fallback is not permitted.
 
 <!-- LPG_THRESHOLDS_BEGIN -->

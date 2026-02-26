@@ -67,6 +67,25 @@ Lane B must run through the Lane Performance Gate (LPG) contract:
 - `agent-task-board` emits `artifacts/policy/agent-task-board-validation.json`.
 - Any board schema/hash mismatch is merge-blocking.
 
+### Lane D: PR Template Governance
+
+- CI job `reviewer-agent` performs deterministic risk checks on pull requests.
+- `reviewer-agent` emits `artifacts/policy/reviewer-agent-verdict.json`.
+- `reviewer-agent` must pass as a required status check alongside `policy-verdict`.
+
+### Independent Agent-Delivery Gate
+
+- CI job `agent-delivery` validates agent ownership metadata for pull requests.
+- `agent-delivery` emits `artifacts/policy/agent-delivery-validation.json`.
+- `agent-delivery` must pass as a required status check alongside `policy-verdict`, `reviewer-agent`, and `agent-task-board`.
+- `agent-delivery` requires `TaskBoardVersion`, `TaskID`, and `OwnerAgent` metadata and verifies mapping against `docs/governance/agent-task-board.md`.
+
+### Independent Agent-Task-Board Gate
+
+- CI job `agent-task-board` validates `docs/governance/agent-task-board.md` schema and hash integrity.
+- `agent-task-board` emits `artifacts/policy/agent-task-board-validation.json`.
+- Any board schema/hash mismatch is merge-blocking.
+
 ## Threshold Source of Truth
 
 - Numeric thresholds must be loaded from `docs/pipeline/validation-metrics.md`.
@@ -106,6 +125,7 @@ Lane B must run through the Lane Performance Gate (LPG) contract:
 - `artifacts/policy/ambiguity-triggers.json`
 - `artifacts/policy/clarification-validation.json`
 - `artifacts/policy/clarification-event-gating-guardrail.json`
+- `artifacts/policy/clarification-validation-matrix.json`
 - `artifacts/policy/proof-integrity-validation.json`
 - `artifacts/policy/final-verdict.json`
 - `artifacts/policy/reviewer-agent-verdict.json`
@@ -158,6 +178,10 @@ repository branch strategy policy for pull requests.
 
 `policy-verdict` includes a mandatory `clarification-event-gating-guardrail` lane that
 deterministically validates scoped/unscoped event behavior and fails on regressions.
+
+`policy-verdict` includes a mandatory `clarification-validation-matrix` lane that
+executes fixture-driven regression scenarios and emits
+`artifacts/policy/clarification-validation-matrix.json`.
 
 ### Merge-Blocking Failure Conditions
 

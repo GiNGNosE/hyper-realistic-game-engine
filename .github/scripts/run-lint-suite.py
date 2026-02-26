@@ -9,9 +9,11 @@ import subprocess
 import sys
 from typing import Dict, List, Tuple
 
-ARTIFACT_DIR = pathlib.Path("artifacts/policy")
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+ARTIFACT_DIR = REPO_ROOT / "artifacts/policy"
 CHANGED_PATHS_FILE = ARTIFACT_DIR / "changed-paths.txt"
-SUPPRESSIONS_FILE = pathlib.Path("docs/governance/lint-suppressions.json")
+SUPPRESSIONS_FILE = REPO_ROOT / "docs/governance/lint-suppressions.json"
+DEFAULT_COMMAND_TIMEOUT_SECONDS = 300
 
 CPP_EXTENSIONS = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx"}
 
@@ -45,12 +47,36 @@ DEFAULT_PINS = {
 }
 
 
-def run_command(cmd: List[str]) -> Tuple[int, str]:
+def command_timeout_seconds() -> int:
+    raw_value = os.environ.get("LINT_COMMAND_TIMEOUT_SECONDS", str(DEFAULT_COMMAND_TIMEOUT_SECONDS)).strip()
     try:
-        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        parsed = int(raw_value)
+        if parsed > 0:
+            return parsed
+    except ValueError:
+        pass
+    return DEFAULT_COMMAND_TIMEOUT_SECONDS
+
+
+def run_command(cmd: List[str]) -> Tuple[int, str]:
+    timeout_seconds = command_timeout_seconds()
+    try:
+        proc = subprocess.run(
+            cmd,
+            cwd=REPO_ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=timeout_seconds,
+        )
         return proc.returncode, proc.stdout
     except FileNotFoundError:
         return 127, f"command not found: {cmd[0]}"
+    except subprocess.TimeoutExpired as exc:
+        output = exc.stdout or ""
+        return 124, f"command timed out after {timeout_seconds}s: {' '.join(cmd)}\n{output}"
+    except OSError as exc:
+        return 127, f"unable to execute command {' '.join(cmd)}: {exc}"
 
 
 def collect_changed_paths() -> List[str]:
@@ -60,7 +86,7 @@ def collect_changed_paths() -> List[str]:
         for path in paths:
             if path.startswith(blocked_prefixes):
                 continue
-            if not pathlib.Path(path).exists():
+            if not (REPO_ROOT / path).exists():
                 continue
             out.append(path)
         return out
@@ -79,7 +105,7 @@ def collect_changed_paths() -> List[str]:
 def config_hash() -> str:
     sha = hashlib.sha256()
     for rel in CONFIG_FILES:
-        path = pathlib.Path(rel)
+        path = REPO_ROOT / rel
         if not path.exists():
             continue
         sha.update(rel.encode("utf-8"))
@@ -98,11 +124,15 @@ def observed_versions() -> Dict[str, str]:
         "shfmt": ["shfmt", "--version"],
         "actionlint": ["actionlint", "-version"],
         "yamllint": ["yamllint", "--version"],
-        "markdownlint-cli2": ["markdownlint-cli2", "--version"],
+        # --no-globs avoids filesystem-dependent behavior in markdownlint-cli2.
+        "markdownlint-cli2": ["markdownlint-cli2", "--no-globs", "--version"],
     }
 
     for name, cmd in commands.items():
         rc, output = run_command(cmd)
+        if name == "markdownlint-cli2" and rc != 0:
+            # Backward-compatible fallback if --no-globs is unsupported.
+            rc, output = run_command(["markdownlint-cli2", "--version"])
         if rc != 0:
             out[name] = f"unavailable ({output.strip()})"
             continue
@@ -115,6 +145,14 @@ def parse_version(raw: str, default: str = "") -> str:
     if match:
         return match.group(1)
     return default
+
+
+def parse_markdownlint_cli2_version(raw: str, default: str = "") -> str:
+    # Example output: "markdownlint-cli2 v0.21.0 (markdownlint v0.39.0)".
+    match = re.search(r"\bmarkdownlint-cli2\b[^\r\n]*?\bv?(\d+\.\d+\.\d+)\b", raw, flags=re.IGNORECASE)
+    if match:
+        return match.group(1)
+    return parse_version(raw, default)
 
 
 def parse_major(raw: str, default: str = "") -> str:
@@ -139,7 +177,7 @@ def verify_version_pins(observed: Dict[str, str]) -> Tuple[str, List[str], Dict[
         "shfmt": parse_version(observed.get("shfmt", "")),
         "actionlint": parse_version(observed.get("actionlint", "")),
         "yamllint": parse_version(observed.get("yamllint", "")),
-        "markdownlint-cli2": parse_version(observed.get("markdownlint-cli2", "")),
+        "markdownlint-cli2": parse_markdownlint_cli2_version(observed.get("markdownlint-cli2", "")),
     }
 
     if expected.get("clang_tidy_major") and normalized_observed["clang_tidy_major"] != expected["clang_tidy_major"]:
@@ -156,7 +194,7 @@ def verify_version_pins(observed: Dict[str, str]) -> Tuple[str, List[str], Dict[
         "shfmt": parse_version(expected.get("shfmt", "")),
         "actionlint": parse_version(expected.get("actionlint", "")),
         "yamllint": parse_version(expected.get("yamllint", "")),
-        "markdownlint-cli2": parse_version(expected.get("markdownlint-cli2", "")),
+        "markdownlint-cli2": parse_markdownlint_cli2_version(expected.get("markdownlint-cli2", "")),
     }
 
     for key in ("shellcheck", "shfmt", "actionlint", "yamllint", "markdownlint-cli2"):
