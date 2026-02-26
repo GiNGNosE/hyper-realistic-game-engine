@@ -1,0 +1,23 @@
+name: agent-delivery
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  agent-delivery:
+    name: agent-delivery
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate agent delivery contract
+        run: .github/scripts/validate-agent-delivery.sh
+      - name: Upload agent delivery artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-delivery
+          path: artifacts/policy/agent-delivery-validation.json
