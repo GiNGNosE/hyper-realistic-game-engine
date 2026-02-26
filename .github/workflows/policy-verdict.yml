@@ -1,0 +1,123 @@
+name: policy-verdict
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      policy_phase:
+        description: "Governance phase for applicable-rule resolution"
+        required: false
+        default: "pre-phase-0"
+
+jobs:
+  lane-correctness:
+    name: lane-correctness
+    runs-on: ubuntu-latest
+    env:
+      POLICY_ENV_CLASS: replay-reference
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Emit environment fingerprint
+        run: |
+          mkdir -p artifacts/policy
+          echo "{\"env_class\":\"${POLICY_ENV_CLASS}\",\"runner\":\"${RUNNER_OS}\",\"note\":\"replace with full compiler/runtime fingerprint\"}" > artifacts/policy/lane-correctness-env.json
+      - name: Run correctness and determinism checks
+        run: |
+          echo "{\"status\":\"pending-implementation\",\"lane\":\"correctness\"}" > artifacts/policy/lane-correctness.json
+      - name: Upload correctness artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lane-correctness
+          path: artifacts/policy/lane-correctness*.json
+
+  lane-performance:
+    name: lane-performance
+    runs-on: ubuntu-latest
+    env:
+      POLICY_ENV_CLASS: perf-stable-runner
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Emit environment fingerprint
+        run: |
+          mkdir -p artifacts/policy
+          echo "{\"env_class\":\"${POLICY_ENV_CLASS}\",\"runner\":\"${RUNNER_OS}\",\"note\":\"replace with full CPU/GPU class and flags\"}" > artifacts/policy/lane-performance-env.json
+      - name: Run performance and fidelity checks
+        run: |
+          echo "{\"status\":\"pending-implementation\",\"lane\":\"performance\",\"threshold_source\":\"docs/pipeline/validation-metrics.md\"}" > artifacts/policy/lane-performance.json
+      - name: Upload performance artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lane-performance
+          path: artifacts/policy/lane-performance*.json
+
+  proof-enforcement:
+    name: proof-enforcement
+    runs-on: ubuntu-latest
+    env:
+      POLICY_PHASE: ${{ github.event.inputs.policy_phase || 'pre-phase-0' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Resolve applicable rules and rule inventory hash
+        run: .github/scripts/resolve-applicable-rules.sh
+      - name: Validate rule-read receipt schema and specificity
+        run: .github/scripts/validate-rule-read-receipt.sh
+      - name: Validate applicable-rule coverage
+        run: .github/scripts/validate-rule-coverage.sh
+      - name: Validate clarification log and ambiguity mapping
+        run: .github/scripts/validate-clarification-log.sh
+      - name: Validate proof integrity bindings
+        run: .github/scripts/validate-proof-integrity.sh
+      - name: Upload proof artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lane-proof-enforcement
+          path: artifacts/policy/*.json
+
+  policy-verdict:
+    name: policy-verdict
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - lane-correctness
+      - lane-performance
+      - proof-enforcement
+    steps:
+      - name: Compute final policy verdict
+        run: |
+          mkdir -p artifacts/policy
+          CORRECTNESS_STATUS="${{ needs.lane-correctness.result }}"
+          PERFORMANCE_STATUS="${{ needs.lane-performance.result }}"
+          PROOF_STATUS="${{ needs.proof-enforcement.result }}"
+
+          if [[ "${CORRECTNESS_STATUS}" == "success" && "${PERFORMANCE_STATUS}" == "success" && "${PROOF_STATUS}" == "success" ]]; then
+            VERDICT="pass"
+          else
+            VERDICT="fail"
+          fi
+
+          cat > artifacts/policy/final-verdict.json <<EOF
+          {
+            "status": "${VERDICT}",
+            "authority": "automated-review-board",
+            "lane_results": {
+              "lane-correctness": "${CORRECTNESS_STATUS}",
+              "lane-performance": "${PERFORMANCE_STATUS}",
+              "proof-enforcement": "${PROOF_STATUS}"
+            }
+          }
+          EOF
+
+          if [[ "${VERDICT}" != "pass" ]]; then
+            echo "policy-verdict failed because one or more required lanes did not pass."
+            exit 1
+          fi
+      - name: Upload verdict artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: policy-verdict
+          path: artifacts/policy/final-verdict.json
