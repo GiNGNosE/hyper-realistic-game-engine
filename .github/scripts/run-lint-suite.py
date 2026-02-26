@@ -37,11 +37,11 @@ EXPECTED_ENV = {
 DEFAULT_PINS = {
     "clang_tidy_major": "18",
     "clang_format_major": "18",
-    "shellcheck": "0.10.0",
-    "shfmt": "3.8.0",
-    "actionlint": "1.7.7",
-    "yamllint": "1.35.1",
-    "markdownlint-cli2": "0.14.0",
+    "shellcheck": "0.11.0",
+    "shfmt": "3.12.0",
+    "actionlint": "1.7.11",
+    "yamllint": "1.38.0",
+    "markdownlint-cli2": "0.21.0",
 }
 
 
@@ -54,14 +54,26 @@ def run_command(cmd: List[str]) -> Tuple[int, str]:
 
 
 def collect_changed_paths() -> List[str]:
+    def filtered(paths: List[str]) -> List[str]:
+        blocked_prefixes = ("build/", "artifacts/")
+        out: List[str] = []
+        for path in paths:
+            if path.startswith(blocked_prefixes):
+                continue
+            if not pathlib.Path(path).exists():
+                continue
+            out.append(path)
+        return out
+
     if CHANGED_PATHS_FILE.exists():
-        return [line.strip() for line in CHANGED_PATHS_FILE.read_text(encoding="utf-8").splitlines() if line.strip()]
+        paths = [line.strip() for line in CHANGED_PATHS_FILE.read_text(encoding="utf-8").splitlines() if line.strip()]
+        return filtered(paths)
 
     rc, output = run_command(["git", "ls-files"])
     if rc != 0:
         raise RuntimeError(f"Unable to determine tracked paths:\n{output}")
     CHANGED_PATHS_FILE.write_text(output, encoding="utf-8")
-    return [line.strip() for line in output.splitlines() if line.strip()]
+    return filtered([line.strip() for line in output.splitlines() if line.strip()])
 
 
 def config_hash() -> str:
@@ -124,7 +136,7 @@ def verify_version_pins(observed: Dict[str, str]) -> Tuple[str, List[str], Dict[
         "clang_tidy_major": parse_major(observed.get("clang_tidy", "")),
         "clang_format_major": parse_major(observed.get("clang_format", "")),
         "shellcheck": parse_version(observed.get("shellcheck", "")),
-        "shfmt": parse_version(observed.get("shfmt", ""), parse_version(observed.get("shfmt", "").lstrip("v"))),
+        "shfmt": parse_version(observed.get("shfmt", "")),
         "actionlint": parse_version(observed.get("actionlint", "")),
         "yamllint": parse_version(observed.get("yamllint", "")),
         "markdownlint-cli2": parse_version(observed.get("markdownlint-cli2", "")),
@@ -139,9 +151,19 @@ def verify_version_pins(observed: Dict[str, str]) -> Tuple[str, List[str], Dict[
             f"clang-format major mismatch: expected {expected['clang_format_major']}, observed {normalized_observed['clang_format_major'] or 'unknown'}"
         )
 
+    normalized_expected = {
+        "shellcheck": parse_version(expected.get("shellcheck", "")),
+        "shfmt": parse_version(expected.get("shfmt", "")),
+        "actionlint": parse_version(expected.get("actionlint", "")),
+        "yamllint": parse_version(expected.get("yamllint", "")),
+        "markdownlint-cli2": parse_version(expected.get("markdownlint-cli2", "")),
+    }
+
     for key in ("shellcheck", "shfmt", "actionlint", "yamllint", "markdownlint-cli2"):
-        if expected.get(key) and normalized_observed.get(key) != expected[key]:
-            errors.append(f"{key} version mismatch: expected {expected[key]}, observed {normalized_observed.get(key) or 'unknown'}")
+        if normalized_expected.get(key) and normalized_observed.get(key) != normalized_expected[key]:
+            errors.append(
+                f"{key} version mismatch: expected {normalized_expected[key]}, observed {normalized_observed.get(key) or 'unknown'}"
+            )
 
     return ("pass" if not errors else "fail"), errors, expected, normalized_observed
 
@@ -268,7 +290,7 @@ def lint_docs(files: List[str]) -> Dict[str, object]:
         return result
     result["status"] = "pass"
 
-    rc, output = run_command(["markdownlint-cli2", *files])
+    rc, output = run_command(["markdownlint-cli2", "--no-globs", *files])
     result["checks"]["markdownlint-cli2"] = "pass" if rc == 0 else "fail"
     if rc != 0:
         result["status"] = "fail"
