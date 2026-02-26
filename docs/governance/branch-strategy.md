@@ -56,7 +56,8 @@ PRs with missing marker, missing required sections, or incomplete required check
 
 1. `policy-verdict` lane `lane-branch-governance` enforces source naming and base target matrix and emits `artifacts/policy/lane-branch-governance.json`.
 2. `policy-verdict` lane `lane-pr-template-governance` enforces PR template compliance and emits `artifacts/policy/pr-template-validation.json`.
-3. GitHub branch protection/ruleset on `main` enforces PR-only merge flow and requires status check `policy-verdict`.
+3. GitHub branch protection/ruleset on `main` enforces PR-only merge flow and requires
+   status checks `policy-verdict`, `reviewer-agent`, and `agent-delivery`.
 
 Both layers are required: CI enforces branch semantics, while platform ruleset blocks direct pushes and bypass paths.
 
@@ -67,8 +68,8 @@ Configure on GitHub for `main`:
 - Require a pull request before merging.
 - Keep solo-mode approvals at `0` required approvals.
 - Require branches to be up to date before merging.
+- Require status checks `policy-verdict`, `reviewer-agent`, and `agent-delivery`.
 - Require conversation resolution before merge.
-- Require status check `policy-verdict`.
 - Block force pushes.
 - Block deletions.
 - Restrict who can bypass protections (prefer no bypass).
@@ -105,7 +106,19 @@ Apply settings through:
 ### Phase 2: Enforce
 
 - Keep lane failures merge-blocking in `policy-verdict`.
-- Enable/confirm required `policy-verdict` status check in `main` ruleset.
+- Enable/confirm required `policy-verdict`, `reviewer-agent`, and `agent-delivery` status checks in `main` ruleset.
+
+## Agent Auto-Submit Contract
+
+Agent implementation branches must use:
+
+- `.github/scripts/agent-submit.sh --agent <agent1|agent2|agent3> --message "<summary>"`
+
+The required `agent-delivery` check enforces:
+
+- PR title prefix `[agent1|agent2|agent3]`.
+- PR body declaration `OwnerAgent: agent1|agent2|agent3`.
+- Commit subjects in the PR range prefixed with the same owner agent tag.
 
 ## Verification Matrix
 

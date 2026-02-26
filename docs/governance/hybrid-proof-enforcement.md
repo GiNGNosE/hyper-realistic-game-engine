@@ -57,16 +57,17 @@ CI emits `ambiguity-triggers.json` from policy checks. Initial triggers:
 
 Each trigger maps to at least one required clarification entry when active.
 
-### Event-to-Trigger Scope Mapping
+### Trigger to Event Context Mapping
 
-`missing_target_scope` is event-scoped and only applies when changed-path scope is expected.
+| Trigger type | pull_request | push | workflow_dispatch | schedule |
+| --- | --- | --- | --- | --- |
+| `missing_acceptance_criteria` | active | active | active | active |
+| `multiple_valid_implementations` | active | active | active | active |
+| `missing_target_scope` | active | active | inactive | inactive |
+| `governance_conflict` | active | active | active | active |
 
-| Event | Scope expectation | `missing_target_scope` |
-| --- | --- | --- |
-| `pull_request` | Scoped | Evaluated |
-| `push` | Scoped | Evaluated |
-| `workflow_dispatch` | Unscoped | Not evaluated |
-| `schedule` | Unscoped | Not evaluated |
+`missing_target_scope` is evaluated only for scoped events (`pull_request`, `push`) where target
+scope evidence is mandatory.
 
 ### Compatibility Note
 
