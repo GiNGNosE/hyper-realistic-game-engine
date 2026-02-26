@@ -13,6 +13,8 @@ alwaysApply: true
 - Require proof artifacts for governed changes: `rule-read-receipt.json`, rule coverage report, integrity validation report, and clarification evidence when ambiguity triggers exist.
 - Keep architectural decisions in ADRs under `docs/governance/adrs/` and index updates.
 - Ask the user for clarification before implementation when any requirement is ambiguous, conflicting, or missing critical input.
+- Rebase PR branches onto the latest `main` before final merge approval to keep integration history linear.
+- Use squash merge for PRs targeting `main` so each merged PR lands as a single integration commit.
 
 ## Must Not
 - Do not merge when one objective passes and the other fails.
@@ -20,6 +22,7 @@ alwaysApply: true
 - Do not ship undocumented waivers or expired waivers.
 - Do not bypass deterministic replay checks for simulation-affecting changes.
 - Do not infer missing requirements for governance-critical decisions.
+- Do not use merge-commit strategy for PRs targeting `main` unless a documented governance exception exists.
 
 ## Required Evidence
 - CI artifact bundle with lane-level pass/fail JSON.
