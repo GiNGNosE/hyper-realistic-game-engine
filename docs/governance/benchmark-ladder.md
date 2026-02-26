@@ -25,6 +25,14 @@ Use currently accepted thresholds in `docs/pipeline/validation-metrics.md` and c
 - Use stable hardware class and pinned perf environment for runtime measurements.
 - Use canonical scenario suite (`S1`, `S2`, `S3`) and fixed camera/listener paths.
 - Report median and P95 where applicable.
+- Record ladder checkpoints from LPG artifacts:
+  - `artifacts/policy/lane-performance-thresholds.json`,
+  - `artifacts/policy/baseline-delta.json`,
+  - `artifacts/policy/lane-performance-risk-signals.json`.
+  - `artifacts/policy/lpg-trend-report.json`.
+
+Weekly drift review must consume the latest LPG trend report and update cycle notes when pass/fail streaks or runtime trends indicate regression risk.
+Use `artifacts/policy/lpg-artifact-review.json` as the machine-generated triage input for weekly review.
 
 ## Failure Handling
 

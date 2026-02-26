@@ -18,6 +18,10 @@ Two CI environments are required to control noise and preserve fairness.
   - controlled hardware envelope,
   - unchanged benchmark harness between baseline comparisons.
 
+Lane execution entrypoint:
+
+- `.github/scripts/run-performance-lane.sh` (LPG contract runner).
+
 ## Required Fingerprint Payload
 
 Each run must publish:

@@ -19,6 +19,8 @@ Rule guidance alone is not sufficient for robust control because it is difficult
 - `artifacts/policy/ambiguity-triggers.json`
 - `artifacts/policy/clarification-log.json` (required only when triggers are present)
 - `artifacts/policy/lane-branch-governance.json`
+- `artifacts/policy/lint-summary.json`
+- `artifacts/policy/lint-tool-versions.json`
 
 ## End-to-End Flow
 
@@ -89,6 +91,8 @@ The validator set was exercised with synthetic artifacts to confirm fail/pass se
 ## Operational Notes
 
 - Artifact validation is additive to existing correctness and performance lanes.
+- Correctness lane lint outputs are mandatory evidence and are merge-blocking on failure.
+- Lint scope, suppression lifecycle, and version pinning contract are defined in `docs/governance/linting-policy.md`.
 - Branch strategy enforcement runs as an independent merge-blocking lane in `policy-verdict`.
 - This model does not relax any existing governance thresholds.
 - Schema versions must be incremented with compatibility notes when contracts evolve.

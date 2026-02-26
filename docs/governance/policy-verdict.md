@@ -14,6 +14,7 @@ This document defines the solo automated review board.
 
 - build/toolchain compliance,
 - static analysis and sanitizers,
+- pinned lint and style checks (C++, shell, workflow YAML, governance markdown),
 - deterministic replay checks,
 - serialization integrity checks,
 - required test classes by phase.
@@ -23,6 +24,20 @@ This document defines the solo automated review board.
 - performance regression checks,
 - KPI conformance for `M*`, `V*`, `A*`, `D*`,
 - baseline delta and lineage validation.
+
+Lane B must run through the Lane Performance Gate (LPG) contract:
+
+- candidate metrics input in CI is downloaded runtime harness artifact `artifacts/perf/lpg-metrics.json`,
+- CI runtime benchmark production must use a direct harness command (`RUNTIME_HARNESS_CMD`); fixture/bootstrap fallback is forbidden in CI,
+- `RUNTIME_HARNESS_CMD` must be configured as repository/org CI variable and is mandatory for `lane-runtime-benchmark`,
+- scenario set and seeds are loaded from threshold source metadata in `docs/pipeline/validation-metrics.md`,
+- metric thresholds are resolved from that same source document (no duplicated constants in scripts),
+- baseline integrity requires checksum and lineage validation against `baselines/metrics/lpg-index.json`,
+- environment fingerprint is mandatory and includes compiler/toolchain, runtime signature, CPU/GPU class, and key flags,
+- any required LPG check failure is merge-blocking.
+- scheduled LPG drift checks run weekly and publish `lpg-trend-report` artifacts for governance review.
+- operational handoff and ownership logging are maintained in `docs/governance/lpg-operations-runbook.md`.
+- runtime harness command and payload contract are defined in `docs/governance/lpg-runtime-harness-contract.md`.
 
 ### Lane C: Branch Governance
 
@@ -48,7 +63,18 @@ This document defines the solo automated review board.
 ## Required Machine-Readable Artifacts
 
 - `artifacts/policy/lane-correctness.json`
+- `artifacts/policy/lint-summary.json`
+- `artifacts/policy/lint-tool-versions.json`
+- `artifacts/policy/lint-cpp.json`
+- `artifacts/policy/lint-shell.json`
+- `artifacts/policy/lint-yaml.json`
+- `artifacts/policy/lint-docs.json`
 - `artifacts/policy/lane-performance.json`
+- `artifacts/policy/lane-performance-env.json`
+- `artifacts/policy/lane-performance-thresholds.json`
+- `artifacts/policy/baseline-integrity.json`
+- `artifacts/policy/baseline-delta.json`
+- `artifacts/policy/lane-performance-risk-signals.json`
 - `artifacts/policy/lane-branch-governance.json`
 - `artifacts/policy/waiver-validation.json`
 - `artifacts/policy/required-rules.json`
@@ -59,6 +85,8 @@ This document defines the solo automated review board.
 - `artifacts/policy/clarification-validation.json`
 - `artifacts/policy/proof-integrity-validation.json`
 - `artifacts/policy/final-verdict.json`
+
+Lint behavior and suppression lifecycle are defined in `docs/governance/linting-policy.md`.
 
 ## Waiver Enforcement
 

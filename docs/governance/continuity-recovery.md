@@ -29,7 +29,8 @@ Run one restore drill every quarter:
 1. Simulate loss of local working environment.
 2. Restore source, rules, baselines, and one canonical benchmark bundle.
 3. Re-run deterministic replay and one real-time benchmark.
-4. Compare metrics to previous accepted evidence pack.
+4. Re-run LPG (`.github/scripts/run-performance-lane.sh`) against restored baseline index and metrics input.
+5. Compare metrics to previous accepted evidence pack.
 
 ## Recovery Targets
 
@@ -45,6 +46,7 @@ Maintain a versioned runbook that covers:
 - environment bootstrap order,
 - data restore steps and verification commands,
 - baseline registry reconstruction,
+- LPG baseline index reconstruction (`baselines/metrics/lpg-index.json`) and checksum verification,
 - deterministic replay verification procedure,
 - performance benchmark verification procedure.
 
