@@ -70,6 +70,13 @@ Configure on GitHub for `main`:
 - Block force pushes.
 - Block deletions.
 - Restrict who can bypass protections (prefer no bypass).
+- Prefer repository merge settings with squash merge enabled and merge commits disabled for `main`.
+
+## Merge Strategy Policy
+
+- Before final merge, rebase the PR branch onto the latest `main`.
+- For PRs targeting `main`, use squash merge as the default integration method.
+- Avoid merge-commit strategy for `main` unless explicitly approved as a governance exception.
 
 Canonical desired settings are tracked in `.github/rulesets/main-protected-trunk.json`.
 
