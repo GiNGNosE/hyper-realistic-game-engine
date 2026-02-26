@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0.0",
+  "task_id": "task-edge-shape",
+  "commit_id": "deadbeef",
+  "ambiguities": {
+    "trigger_type": "missing_acceptance_criteria"
+  }
+}
