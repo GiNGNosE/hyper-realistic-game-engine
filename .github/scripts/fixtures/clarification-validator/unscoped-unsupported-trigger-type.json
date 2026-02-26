@@ -1,0 +1,65 @@
+{
+  "event_name": "schedule",
+  "inputs": {
+    "artifacts/policy/acceptance-criteria.json": {
+      "json": {
+        "present": true
+      }
+    },
+    "artifacts/policy/clarification-log.json": {
+      "json": {
+        "ambiguities": [
+          {
+            "ambiguity_id": "A-001",
+            "detected_issue": "issue text",
+            "question_asked": "question text",
+            "resolved_at": "2026-02-27T00:00:00Z",
+            "resolved_decision": "decision text",
+            "trigger_type": "unexpected_trigger",
+            "user_response": "user response text"
+          }
+        ],
+        "commit_id": "abc123",
+        "schema_version": "1.0.0",
+        "task_id": "TB-008"
+      }
+    },
+    "artifacts/policy/governance-conflicts.json": {
+      "json": {
+        "active_conflicts": 0
+      }
+    },
+    "artifacts/policy/implementation-options.json": {
+      "json": {
+        "candidates": [
+          "single"
+        ],
+        "selected_option": "single"
+      }
+    },
+    "artifacts/policy/required-rules.json": {
+      "json": {
+        "changed_paths": []
+      }
+    },
+    "artifacts/policy/rule-read-receipt.json": {
+      "json": {
+        "changed_paths": []
+      }
+    }
+  },
+  "expect": {
+    "contains_errors": [
+      "ambiguities[0] contains unsupported trigger_type: unexpected_trigger"
+    ],
+    "excludes_trigger_types": [
+      "missing_target_scope"
+    ],
+    "exit_code": 1,
+    "required_clarification": false,
+    "status": "fail",
+    "target_scope_required": false,
+    "validation_artifact_present": true
+  },
+  "scenario_id": "unscoped-unsupported-trigger-type"
+}
