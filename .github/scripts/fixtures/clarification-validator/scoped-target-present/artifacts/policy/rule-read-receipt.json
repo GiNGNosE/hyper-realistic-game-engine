@@ -1,0 +1,5 @@
+{
+  "changed_paths": [
+    "src/engine/render/frame_graph.cpp"
+  ]
+}
