@@ -104,4 +104,3 @@ if errors:
         print(f"- {err}")
     sys.exit(1)
 PY
-

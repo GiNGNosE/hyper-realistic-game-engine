@@ -46,7 +46,7 @@ while [[ $# -gt 0 ]]; do
       DRAFT_FLAG="--draft"
       shift
       ;;
-    -h|--help)
+    -h | --help)
       usage
       exit 0
       ;;
@@ -107,7 +107,8 @@ else
   gh pr create \
     --base "${BASE_BRANCH}" \
     --title "${PR_TITLE}" \
-    --body "$(cat <<EOF
+    --body "$(
+      cat <<EOF
 OwnerAgent: ${AGENT}
 ImplementationComplete: true
 
@@ -118,7 +119,6 @@ ImplementationComplete: true
 - [ ] Relevant CI checks pass
 - [ ] Reviewer-agent findings are assigned and resolved
 EOF
-)" \
+    )" \
     ${DRAFT_FLAG}
 fi
-
