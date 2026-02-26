@@ -2,8 +2,8 @@
 
 <!-- markdownlint-disable MD022 MD024 -->
 
-BoardVersion: 2026-02-27.2
-BoardHash: 94f0281eb042bddf798c1db47e082c55e7fa1ded7b0a16326c51e460decdc627
+BoardVersion: 2026-02-27.3
+BoardHash: f8bd1154ea09102e392f0dc46dc82cb754348872edd1e58d60f709bd15d0060f
 ## ActiveTasks
 
 ### Task
@@ -173,6 +173,77 @@ EvidenceArtifacts:
 - `artifacts/policy/reviewer-agent-verdict.json`
 - `artifacts/policy/agent-delivery-validation.json`
 - `artifacts/policy/agent-task-board-validation.json`
+
+### Task
+
+TaskID: TB-011
+OwnerAgent: agent1
+Status: assigned
+ScopePaths:
+
+- `runtime/benchmark/main.cpp`
+- `docs/governance/lpg-runtime-harness-contract.md`
+
+Acceptance:
+
+- Runtime harness must not fail when `--output` is a filename without a
+  directory component.
+- Directory creation runs only when `parent_path()` is non-empty; valid nested
+  output paths still create missing directories.
+- Harness emits deterministic error messaging and exit code for true output
+  directory creation failures.
+
+EvidenceArtifacts:
+
+- `artifacts/perf/lpg-metrics.json`
+- `artifacts/policy/lane-performance.json`
+
+### Task
+
+TaskID: TB-012
+OwnerAgent: agent3
+Status: assigned
+ScopePaths:
+
+- `.github/scripts/review-lpg-artifacts.py`
+- `.github/workflows/policy-verdict.yml`
+
+Acceptance:
+
+- Artifact review script does not crash on malformed streak values
+  (for example `"N/A"`, empty string, or null).
+- Script emits a structured failure artifact with actionable error details
+  when streak fields are invalid.
+- Failure behavior remains fail-closed and deterministic for LPG review lanes.
+
+EvidenceArtifacts:
+
+- `artifacts/policy/review-lpg-artifacts.json`
+- `artifacts/policy/final-verdict.json`
+
+### Task
+
+TaskID: TB-013
+OwnerAgent: agent2
+Status: assigned
+ScopePaths:
+
+- `.github/scripts/validate-pr-template.py`
+- `docs/governance/pr-template-strategy.md`
+
+Acceptance:
+
+- Required checklist sections fail validation when any required checkbox
+  remains unchecked.
+- Mixed checked and unchecked checklist items in required sections are treated
+  as incomplete unless policy explicitly allows partial completion.
+- Governance documentation and validator behavior stay aligned for checklist
+  completion semantics.
+
+EvidenceArtifacts:
+
+- `artifacts/policy/pr-template-validation.json`
+- `docs/governance/pr-template-strategy.md`
 
 ## DispatchNotes
 
