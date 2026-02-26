@@ -5,6 +5,7 @@ mkdir -p artifacts/policy
 
 python3 - <<'PY'
 import json
+import os
 import pathlib
 import sys
 
@@ -21,6 +22,8 @@ receipt, receipt_exists = load_json(pathlib.Path("artifacts/policy/rule-read-rec
 criteria, criteria_exists = load_json(pathlib.Path("artifacts/policy/acceptance-criteria.json"), {})
 options, options_exists = load_json(pathlib.Path("artifacts/policy/implementation-options.json"), {})
 conflicts, conflicts_exists = load_json(pathlib.Path("artifacts/policy/governance-conflicts.json"), {})
+event_name = os.environ.get("GITHUB_EVENT_NAME", "").strip()
+target_scope_required = event_name in {"pull_request", "push"}
 
 triggers = []
 trigger_types = set()
@@ -35,7 +38,7 @@ if not criteria_exists or criteria.get("present") is not True:
     )
     trigger_types.add("missing_acceptance_criteria")
 
-if not receipt_exists or not receipt.get("changed_paths"):
+if target_scope_required and (not receipt_exists or not receipt.get("changed_paths")):
     triggers.append(
         {
             "trigger_id": "T002",
@@ -137,6 +140,8 @@ if clarification_path.exists():
 
 result = {
     "status": "pass" if not errors else "fail",
+    "event_name": event_name,
+    "target_scope_required": target_scope_required,
     "trigger_count": len(triggers),
     "required_clarification": bool(triggers),
     "errors": errors,
