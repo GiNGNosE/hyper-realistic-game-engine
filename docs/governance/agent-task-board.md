@@ -2,8 +2,8 @@
 
 <!-- markdownlint-disable MD022 MD024 -->
 
-BoardVersion: 2026-02-27.1
-BoardHash: c468fad2253bc95d19bb644f39a66d1bacf1fc4c1b82ee1832e5af70084713c0
+BoardVersion: 2026-02-27.2
+BoardHash: ca6df5ad6fea72043ba5b093c9d8055a97c3450134dfbbe8195e0553f7afa2d1
 ## ActiveTasks
 
 ### Task
@@ -73,10 +73,30 @@ EvidenceArtifacts:
 - `artifacts/policy/agent-delivery-validation.json`
 - `artifacts/policy/agent-task-board-validation.json`
 
+### Task
+
+TaskID: TB-004
+OwnerAgent: agent3
+Status: done
+ScopePaths:
+
+- `.github/workflows/agent-task-board-fastpath.yml`
+- `docs/governance/agent-task-board.md`
+
+Acceptance:
+
+- Board updates trigger a dedicated fastpath CI lane without changing existing required checks.
+- Fastpath publishes the same machine-readable task-board validation artifact contract.
+
+EvidenceArtifacts:
+
+- `artifacts/policy/agent-task-board-validation.json`
+
 ## DispatchNotes
 
 - Orchestrator and reviewer update assignments in this file only.
 - Agents must reference `TaskBoardVersion` and `TaskID` in PR body metadata.
+- 2026-02-27: Added `agent-task-board-fastpath` CI tunnel for faster task-board update feedback.
 
 ## Task Board Update Protocol
 

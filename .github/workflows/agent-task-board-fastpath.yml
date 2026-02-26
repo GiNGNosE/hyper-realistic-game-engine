@@ -1,0 +1,33 @@
+name: agent-task-board-fastpath
+
+on:
+  pull_request:
+    paths:
+      - "docs/governance/agent-task-board.md"
+      - ".github/scripts/validate-agent-task-board.sh"
+      - ".github/scripts/update-agent-task-board.sh"
+      - ".github/workflows/agent-task-board.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-task-board-fastpath-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  agent-task-board-fastpath:
+    name: agent-task-board-fastpath
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate task board schema and hash (fastpath)
+        run: .github/scripts/validate-agent-task-board.sh
+      - name: Upload fastpath artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-task-board-fastpath
+          path: artifacts/policy/agent-task-board-validation.json
