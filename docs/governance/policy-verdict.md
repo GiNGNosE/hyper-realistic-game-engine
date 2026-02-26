@@ -7,6 +7,7 @@ This document defines the automated review board and merge authority contract.
 - CI job `policy-verdict` is the primary merge gate for lane and proof enforcement.
 - Independent status check `reviewer-agent` is required for change-risk review.
 - Independent status check `agent-delivery` is required to enforce agent ownership and submission metadata.
+- Independent status check `agent-task-board` is required to enforce single-source task-board integrity.
 - Any failing mandatory gate blocks promotion.
 
 ## Required CI Lanes
@@ -29,8 +30,8 @@ This document defines the automated review board and merge authority contract.
 Lane B must run through the Lane Performance Gate (LPG) contract:
 
 - candidate metrics input in CI is downloaded runtime harness artifact `artifacts/perf/lpg-metrics.json`,
-- CI runtime benchmark production must use a direct harness command (`RUNTIME_HARNESS_CMD`);
-  fixture/bootstrap fallback is forbidden in CI,
+- CI runtime benchmark production must use a direct harness command (`RUNTIME_HARNESS_CMD`); fixture
+  or bootstrap fallback is forbidden in CI,
 - `RUNTIME_HARNESS_CMD` must be configured as repository/org CI variable and is mandatory for `lane-runtime-benchmark`,
 - scenario set and seeds are loaded from threshold source metadata in `docs/pipeline/validation-metrics.md`,
 - metric thresholds are resolved from that same source document (no duplicated constants in scripts),
@@ -57,18 +58,14 @@ Lane B must run through the Lane Performance Gate (LPG) contract:
 
 - CI job `agent-delivery` validates agent ownership metadata for pull requests.
 - `agent-delivery` emits `artifacts/policy/agent-delivery-validation.json`.
-- `agent-delivery` must pass as a required status check alongside `policy-verdict` and `reviewer-agent`.
+- `agent-delivery` must pass as a required status check alongside `policy-verdict`, `reviewer-agent`, and `agent-task-board`.
+- `agent-delivery` requires `TaskBoardVersion`, `TaskID`, and `OwnerAgent` metadata and verifies mapping against `docs/governance/agent-task-board.md`.
 
-### Lane D: PR Template Governance
+### Independent Agent-Task-Board Gate
 
-- PR body must use one supported template marker:
-  - `feature`,
-  - `bugfix`,
-  - `governance-docs`,
-  - `baseline-promotion`.
-- Required template sections must be present and non-empty.
-- Required checklists must include explicit completion.
-- Baseline-promotion PRs must include promotion intent metadata and lineage fields.
+- CI job `agent-task-board` validates `docs/governance/agent-task-board.md` schema and hash integrity.
+- `agent-task-board` emits `artifacts/policy/agent-task-board-validation.json`.
+- Any board schema/hash mismatch is merge-blocking.
 
 ## Threshold Source of Truth
 
@@ -101,7 +98,6 @@ Lane B must run through the Lane Performance Gate (LPG) contract:
 - `artifacts/policy/baseline-delta.json`
 - `artifacts/policy/lane-performance-risk-signals.json`
 - `artifacts/policy/lane-branch-governance.json`
-- `artifacts/policy/pr-template-validation.json`
 - `artifacts/policy/waiver-validation.json`
 - `artifacts/policy/required-rules.json`
 - `artifacts/policy/rule-read-receipt.json`
@@ -109,11 +105,11 @@ Lane B must run through the Lane Performance Gate (LPG) contract:
 - `artifacts/policy/rule-coverage-validation.json`
 - `artifacts/policy/ambiguity-triggers.json`
 - `artifacts/policy/clarification-validation.json`
-- `artifacts/policy/clarification-event-gating-guardrail.json`
 - `artifacts/policy/proof-integrity-validation.json`
 - `artifacts/policy/final-verdict.json`
 - `artifacts/policy/reviewer-agent-verdict.json`
 - `artifacts/policy/agent-delivery-validation.json`
+- `artifacts/policy/agent-task-board-validation.json`
 
 Lint behavior and suppression lifecycle are defined in `docs/governance/linting-policy.md`.
 
@@ -131,41 +127,20 @@ Lint behavior and suppression lifecycle are defined in `docs/governance/linting-
 - deterministic applicable-rule resolution from phase and changed paths,
 - rule receipt schema and per-rule evidence specificity,
 - full applicable-rule coverage in declared and applied sets,
-- deterministic ambiguity trigger generation and event-aware clarification requirements,
+- deterministic ambiguity trigger generation and clarification requirements,
 - integrity binding between proof artifacts and CI event context.
 
-Proof-enforcement must evaluate clarification requirements with CI event context:
+`missing_target_scope` trigger activation is event-scoped:
 
-- `pull_request`, `push` -> target scope is required and `missing_target_scope` may activate.
-- `workflow_dispatch`, `schedule` -> target scope is not required for trigger activation.
-- Current `policy-verdict` workflow entry points are `pull_request`,
-  `workflow_dispatch`, and `schedule`; `push` semantics apply when the validator
-  runs under push-context lanes or harnesses.
+- active for `pull_request` and `push`,
+- inactive for `workflow_dispatch` and `schedule`.
 
-`artifacts/policy/clarification-validation.json` remains mandatory proof output and must
-include event-context fields (`event_name`, `target_scope_required`,
-`required_clarification`, `errors`).
+This is a behavioral refinement of trigger conditions; it does not remove required artifact fields.
 
 Promotion must fail if any proof gate fails.
 
-Event-scoped clarification semantics for `missing_target_scope`:
-
-| Event | Scope expectation | `missing_target_scope` |
-| --- | --- | --- |
-| `pull_request` | Scoped | Evaluated |
-| `push` | Scoped | Evaluated |
-| `workflow_dispatch` | Unscoped | Not evaluated |
-| `schedule` | Unscoped | Not evaluated |
-
-Compatibility note: this is a behavioral refinement and does not remove fields from
-`artifacts/policy/ambiguity-triggers.json` or
-`artifacts/policy/clarification-validation.json`.
-
-`policy-verdict` also includes a mandatory `lane-branch-governance` lane that enforces
-repository branch strategy policy for pull requests.
-
-`policy-verdict` includes a mandatory `clarification-event-gating-guardrail` lane that
-deterministically validates scoped/unscoped event behavior and fails on regressions.
+`policy-verdict` also includes a mandatory `lane-branch-governance` lane that enforces repository
+branch strategy policy for pull requests.
 
 ### Merge-Blocking Failure Conditions
 
@@ -173,12 +148,6 @@ deterministically validates scoped/unscoped event behavior and fails on regressi
 - Receipt identity mismatch (`commit_id`, `pr_number`, `phase`, or changed paths).
 - Rule inventory hash mismatch with CI-computed `.mdc` hash.
 - Missing applicable rules in `applied_rules`.
-- Ambiguity triggers detected (after event-context evaluation) without a valid `clarification-log.json`.
+- Ambiguity triggers detected without a valid `clarification-log.json`.
 - Clarification entries missing `user_response` or `resolved_decision`.
 - Branch naming or base-target policy violation in `lane-branch-governance`.
-- PR template marker/section/checklist validation failure in `lane-pr-template-governance`.
-
-## Compatibility Note
-
-Event-aware `missing_target_scope` activation is a behavioral refinement only. It does
-not remove trigger types, required artifacts, or clarification validation fields.

@@ -1,0 +1,21 @@
+name: agent-task-board
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  agent-task-board:
+    name: agent-task-board
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate agent task board schema and hash
+        run: .github/scripts/validate-agent-task-board.sh
+      - name: Upload agent task board artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-task-board
+          path: artifacts/policy/agent-task-board-validation.json
