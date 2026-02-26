@@ -1,0 +1,46 @@
+{
+  "event_name": "workflow_dispatch",
+  "inputs": {
+    "artifacts/policy/acceptance-criteria.json": {
+      "raw": "{ invalid criteria json }\n"
+    },
+    "artifacts/policy/governance-conflicts.json": {
+      "json": {
+        "active_conflicts": 0
+      }
+    },
+    "artifacts/policy/implementation-options.json": {
+      "json": {
+        "candidates": [
+          "single"
+        ],
+        "selected_option": "single"
+      }
+    },
+    "artifacts/policy/required-rules.json": {
+      "json": {
+        "changed_paths": []
+      }
+    },
+    "artifacts/policy/rule-read-receipt.json": {
+      "raw": "{ invalid receipt json }\n"
+    }
+  },
+  "expect": {
+    "contains_errors": [
+      "Invalid JSON in artifacts/policy/acceptance-criteria.json",
+      "Invalid JSON in artifacts/policy/rule-read-receipt.json",
+      "Ambiguity triggers detected but clarification-log.json is missing"
+    ],
+    "contains_trigger_types": [
+      "missing_acceptance_criteria"
+    ],
+    "exit_code": 1,
+    "input_artifact_error_count": 2,
+    "required_clarification": true,
+    "status": "fail",
+    "target_scope_required": false,
+    "validation_artifact_present": true
+  },
+  "scenario_id": "unscoped-mixed-invalid-artifacts"
+}

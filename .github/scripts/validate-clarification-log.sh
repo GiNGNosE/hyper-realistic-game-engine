@@ -9,24 +9,34 @@ import os
 import pathlib
 import sys
 
-def load_json(path: pathlib.Path, default):
+input_errors = []
+
+def load_json(path: pathlib.Path, default, label: str):
     if not path.exists():
         return default, False
     try:
         return json.loads(path.read_text(encoding="utf-8")), True
     except Exception as exc:
-        raise SystemExit(f"Invalid JSON in {path}: {exc}")
+        input_errors.append(
+            {
+                "code": "invalid_json",
+                "artifact": str(path),
+                "label": label,
+                "message": f"Invalid JSON in {path}: {exc}",
+            }
+        )
+        return default, False
 
-required_rules, _ = load_json(pathlib.Path("artifacts/policy/required-rules.json"), {})
-receipt, receipt_exists = load_json(pathlib.Path("artifacts/policy/rule-read-receipt.json"), {})
-criteria, criteria_exists = load_json(pathlib.Path("artifacts/policy/acceptance-criteria.json"), {})
-options, options_exists = load_json(pathlib.Path("artifacts/policy/implementation-options.json"), {})
-conflicts, conflicts_exists = load_json(pathlib.Path("artifacts/policy/governance-conflicts.json"), {})
-event_name = os.environ.get("GITHUB_EVENT_NAME", "").strip()
-target_scope_required = event_name in {"pull_request", "push"}
+required_rules, _ = load_json(pathlib.Path("artifacts/policy/required-rules.json"), {}, "required_rules")
+receipt, receipt_exists = load_json(pathlib.Path("artifacts/policy/rule-read-receipt.json"), {}, "rule_read_receipt")
+criteria, criteria_exists = load_json(pathlib.Path("artifacts/policy/acceptance-criteria.json"), {}, "acceptance_criteria")
+options, options_exists = load_json(pathlib.Path("artifacts/policy/implementation-options.json"), {}, "implementation_options")
+conflicts, conflicts_exists = load_json(pathlib.Path("artifacts/policy/governance-conflicts.json"), {}, "governance_conflicts")
 
 triggers = []
 trigger_types = set()
+event_name = os.environ.get("GITHUB_EVENT_NAME", "").strip() or "unknown"
+target_scope_required = event_name in {"pull_request", "push"}
 
 if not criteria_exists or criteria.get("present") is not True:
     triggers.append(
@@ -88,7 +98,7 @@ if triggers and not clarification_path.exists():
     errors.append("Ambiguity triggers detected but clarification-log.json is missing")
     clarification = {}
 else:
-    clarification, clar_exists = load_json(clarification_path, {})
+    clarification, clar_exists = load_json(clarification_path, {}, "clarification_log")
     if triggers and not clar_exists:
         errors.append("clarification-log.json could not be read")
 
@@ -138,12 +148,16 @@ if clarification_path.exists():
             + ", ".join(missing_types)
         )
 
+errors = [entry["message"] for entry in sorted(input_errors, key=lambda item: (item["artifact"], item["code"]))] + errors
+
 result = {
     "status": "pass" if not errors else "fail",
     "event_name": event_name,
-    "trigger_count": len(triggers),
     "target_scope_required": target_scope_required,
+    "trigger_count": len(triggers),
     "required_clarification": bool(triggers),
+    "input_artifact_error_count": len(input_errors),
+    "input_artifact_errors": sorted(input_errors, key=lambda item: (item["artifact"], item["code"])),
     "errors": errors,
 }
 pathlib.Path("artifacts/policy/clarification-validation.json").write_text(
