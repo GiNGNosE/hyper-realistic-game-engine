@@ -17,9 +17,13 @@ Required behavior:
 - output JSON must match LPG schema contract.
 - full command/payload contract is defined in `docs/governance/lpg-runtime-harness-contract.md`.
 - recommended command includes explicit backend invocation, for example:
-  - `./tools/runtime-harness/run-benchmark.sh --phase "${POLICY_PHASE}" --scenario-set "canonical-s1-s3" --output "artifacts/perf/lpg-metrics.json" --backend-cmd "./build/runtime/lpg-runtime-benchmark --phase ${POLICY_PHASE} --scenario-set canonical-s1-s3 --output artifacts/perf/lpg-metrics.json"`
+  - `./tools/runtime-harness/run-benchmark.sh --phase "${POLICY_PHASE}" \`
+    `--scenario-set "canonical-s1-s3" --output "artifacts/perf/lpg-metrics.json" \`
+    `--backend-cmd "./build/runtime/lpg-runtime-benchmark --phase ${POLICY_PHASE} \`
+    `--scenario-set canonical-s1-s3 --output artifacts/perf/lpg-metrics.json"`
 - ensure benchmark backend binary is built before run:
-  - `cmake -S runtime -B build/runtime -DCMAKE_BUILD_TYPE=Release && cmake --build build/runtime --config Release --target lpg-runtime-benchmark`
+  - `cmake -S runtime -B build/runtime -DCMAKE_BUILD_TYPE=Release && \`
+    `cmake --build build/runtime --config Release --target lpg-runtime-benchmark`
 - bootstrap scope note: current backend supports `pre-phase-0` only and intentionally fails unsupported phases.
 
 ### 2) Trigger Non-Default Proof Run
@@ -76,7 +80,7 @@ Maintain one entry per proof or weekly checkpoint:
 
 ### 2026-02-26 governance go-live checkpoint
 
-- run_url: https://github.com/GiNGNosE/hyper-realistic-game-engine/actions/runs/22455190697
+- run_url: <https://github.com/GiNGNosE/hyper-realistic-game-engine/actions/runs/22455190697>
 - run_date_utc: 2026-02-26T18:15:56Z
 - policy_phase: pre-phase-0
 - final_verdict_status: pass
@@ -92,7 +96,7 @@ Maintain one entry per proof or weekly checkpoint:
 
 ### 2026-02-26 negative-path validation
 
-- run_url: https://github.com/GiNGNosE/hyper-realistic-game-engine/actions/runs/22455257449
+- run_url: <https://github.com/GiNGNosE/hyper-realistic-game-engine/actions/runs/22455257449>
 - run_date_utc: 2026-02-26T18:17:48Z
 - policy_phase: phase-2
 - final_verdict_status: fail (expected)
@@ -107,4 +111,6 @@ Maintain one entry per proof or weekly checkpoint:
 
 ## Next Implementation Track
 
-- phase-1 runtime expansion: extend `runtime/benchmark/main.cpp` and harness validation for `phase-1` required metrics from `docs/pipeline/validation-metrics.md` while preserving deterministic replay and runtime budgets.
+- phase-1 runtime expansion: extend `runtime/benchmark/main.cpp` and harness validation for
+  `phase-1` required metrics from `docs/pipeline/validation-metrics.md` while preserving
+  deterministic replay and runtime budgets.
