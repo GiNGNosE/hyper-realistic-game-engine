@@ -1,0 +1,57 @@
+{
+  "event_name": "pull_request",
+  "inputs": {
+    "artifacts/policy/acceptance-criteria.json": {
+      "json": {
+        "present": true
+      }
+    },
+    "artifacts/policy/clarification-log.json": {
+      "json": {
+        "ambiguities": [],
+        "schema_version": "1.0.0"
+      }
+    },
+    "artifacts/policy/governance-conflicts.json": {
+      "json": {
+        "active_conflicts": 0
+      }
+    },
+    "artifacts/policy/implementation-options.json": {
+      "json": {
+        "candidates": [
+          "single"
+        ],
+        "selected_option": "single"
+      }
+    },
+    "artifacts/policy/required-rules.json": {
+      "json": {
+        "changed_paths": [
+          "docs/governance/policy-verdict.md"
+        ]
+      }
+    },
+    "artifacts/policy/rule-read-receipt.json": {
+      "json": {
+        "changed_paths": []
+      }
+    }
+  },
+  "expect": {
+    "contains_errors": [
+      "clarification-log missing required field: task_id",
+      "clarification-log missing required field: commit_id",
+      "clarification-log does not map all detected trigger types: missing_target_scope"
+    ],
+    "contains_trigger_types": [
+      "missing_target_scope"
+    ],
+    "exit_code": 1,
+    "required_clarification": true,
+    "status": "fail",
+    "target_scope_required": true,
+    "validation_artifact_present": true
+  },
+  "scenario_id": "scoped-partial-clarification-missing-fields"
+}

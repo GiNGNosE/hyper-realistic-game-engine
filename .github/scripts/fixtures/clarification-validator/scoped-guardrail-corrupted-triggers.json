@@ -1,0 +1,54 @@
+{
+  "event_name": "push",
+  "inputs": {
+    "artifacts/policy/acceptance-criteria.json": {
+      "json": {
+        "present": true
+      }
+    },
+    "artifacts/policy/governance-conflicts.json": {
+      "json": {
+        "active_conflicts": 0
+      }
+    },
+    "artifacts/policy/implementation-options.json": {
+      "json": {
+        "candidates": [
+          "single"
+        ],
+        "selected_option": "single"
+      }
+    },
+    "artifacts/policy/required-rules.json": {
+      "json": {
+        "changed_paths": [
+          "docs/governance/policy-verdict.md"
+        ]
+      }
+    },
+    "artifacts/policy/rule-read-receipt.json": {
+      "json": {
+        "changed_paths": [
+          "docs/governance/policy-verdict.md"
+        ]
+      }
+    }
+  },
+  "post_validator_overrides": {
+    "artifacts/policy/ambiguity-triggers.json": {
+      "raw": "{ invalid triggers json }\n"
+    }
+  },
+  "expect": {
+    "exit_code": 0,
+    "guardrail_contains_error_codes": [
+      "invalid_json"
+    ],
+    "guardrail_status": "fail",
+    "required_clarification": false,
+    "status": "pass",
+    "target_scope_required": true,
+    "validation_artifact_present": true
+  },
+  "scenario_id": "scoped-guardrail-corrupted-triggers"
+}

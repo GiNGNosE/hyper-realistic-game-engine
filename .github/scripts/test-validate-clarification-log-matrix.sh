@@ -1,358 +1,317 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(git rev-parse --show-toplevel)"
-VALIDATOR_SCRIPT="${ROOT_DIR}/.github/scripts/validate-clarification-log.sh"
-FIXTURE_ROOT="${ROOT_DIR}/.github/scripts/fixtures/clarification-validator"
-OUTPUT_DIR="${ROOT_DIR}/artifacts/policy"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+FIXTURES_DIR="${REPO_ROOT}/.github/scripts/fixtures/clarification-validator"
+OUTPUT_DIR="${REPO_ROOT}/artifacts/policy"
 
 mkdir -p "${OUTPUT_DIR}"
 
-python3 - "${VALIDATOR_SCRIPT}" "${FIXTURE_ROOT}" "${OUTPUT_DIR}" <<'PY'
+python3 - "${REPO_ROOT}" "${FIXTURES_DIR}" "${OUTPUT_DIR}" <<'PY'
 import json
 import os
 import pathlib
-import shutil
 import subprocess
 import sys
 import tempfile
+from typing import Dict, List
 
-validator_script = pathlib.Path(sys.argv[1]).resolve()
-fixture_root = pathlib.Path(sys.argv[2]).resolve()
-output_dir = pathlib.Path(sys.argv[3]).resolve()
+repo_root = pathlib.Path(sys.argv[1])
+fixtures_dir = pathlib.Path(sys.argv[2])
+output_dir = pathlib.Path(sys.argv[3])
+validator = repo_root / ".github/scripts/validate-clarification-log.sh"
+guardrail = repo_root / ".github/scripts/validate-clarification-event-gating.sh"
 
-matrix_output_path = output_dir / "clarification-validator-matrix.json"
-summary_output_path = output_dir / "clarification-validator-matrix-summary.md"
+if not fixtures_dir.exists():
+    raise SystemExit(f"Missing fixtures directory: {fixtures_dir}")
 
-if not validator_script.exists():
-    raise SystemExit(f"Missing validator script: {validator_script}")
-if not fixture_root.exists():
-    raise SystemExit(f"Missing fixture root: {fixture_root}")
+fixture_paths = sorted(fixtures_dir.glob("*.json"))
+if not fixture_paths:
+    raise SystemExit(f"No fixtures found in: {fixtures_dir}")
 
-scenarios = [
-    {
-        "id": "pr_missing_scope",
-        "event_name": "pull_request",
-        "fixture": "scoped-target-missing",
-        "expect_t002": True,
-        "expect_target_scope_required": True,
-        "expect_required_clarification": True,
-        "expect_return_code": 1,
-        "expect_error_contains": "Ambiguity triggers detected but clarification-log.json is missing",
-    },
-    {
-        "id": "pr_scope_present",
-        "event_name": "pull_request",
-        "fixture": "scoped-target-present",
-        "expect_t002": False,
-        "expect_target_scope_required": True,
-        "expect_required_clarification": False,
-        "expect_return_code": 0,
-    },
-    {
-        "id": "push_missing_scope",
-        "event_name": "push",
-        "fixture": "scoped-target-missing",
-        "expect_t002": True,
-        "expect_target_scope_required": True,
-        "expect_required_clarification": True,
-        "expect_return_code": 1,
-        "expect_error_contains": "Ambiguity triggers detected but clarification-log.json is missing",
-    },
-    {
-        "id": "push_scope_present",
-        "event_name": "push",
-        "fixture": "scoped-target-present",
-        "expect_t002": False,
-        "expect_target_scope_required": True,
-        "expect_required_clarification": False,
-        "expect_return_code": 0,
-    },
-    {
-        "id": "workflow_dispatch_missing_scope",
-        "event_name": "workflow_dispatch",
-        "fixture": "scoped-target-missing",
-        "expect_t002": False,
-        "expect_target_scope_required": False,
-        "expect_required_clarification": False,
-        "expect_return_code": 0,
-    },
-    {
-        "id": "schedule_missing_scope",
-        "event_name": "schedule",
-        "fixture": "scoped-target-missing",
-        "expect_t002": False,
-        "expect_target_scope_required": False,
-        "expect_required_clarification": False,
-        "expect_return_code": 0,
-    },
-    {
-        "id": "workflow_dispatch_missing_criteria",
-        "event_name": "workflow_dispatch",
-        "fixture": "missing-criteria",
-        "expect_t002": False,
-        "expect_target_scope_required": False,
-        "expect_required_clarification": True,
-        "expect_return_code": 1,
-        "expect_error_contains": "Ambiguity triggers detected but clarification-log.json is missing",
-    },
-    {
-        "id": "workflow_dispatch_invalid_ambiguities_shape",
-        "event_name": "workflow_dispatch",
-        "fixture": "invalid-ambiguities-shape",
-        "expect_t002": False,
-        "expect_target_scope_required": False,
-        "expect_required_clarification": True,
-        "expect_return_code": 1,
-        "expect_error_contains": "clarification-log ambiguities must be an array",
-    },
-    {
-        "id": "workflow_dispatch_unsupported_trigger_type",
-        "event_name": "workflow_dispatch",
-        "fixture": "unsupported-trigger-type",
-        "expect_t002": False,
-        "expect_target_scope_required": False,
-        "expect_required_clarification": True,
-        "expect_return_code": 1,
-        "expect_error_contains": "contains unsupported trigger_type",
-    },
-    {
-        "id": "pull_request_invalid_receipt_json",
-        "event_name": "pull_request",
-        "fixture": "invalid-receipt-json",
-        "expect_t002": False,
-        "expect_target_scope_required": True,
-        "expect_required_clarification": None,
-        "expect_return_code": 1,
-        "expect_error_contains": "Invalid JSON in artifacts/policy/rule-read-receipt.json",
-        "expect_artifacts": False,
-    },
-]
+def load_json(path: pathlib.Path, *, strict: bool = True):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        if strict:
+            raise
+        return {}
+
+def write_fixture_inputs(tmp_root: pathlib.Path, fixture: Dict[str, object]) -> None:
+    inputs = fixture.get("inputs", {})
+    if not isinstance(inputs, dict):
+        raise ValueError("inputs must be an object")
+    for rel_path in sorted(inputs):
+        spec = inputs[rel_path]
+        if not isinstance(spec, dict):
+            raise ValueError(f"input spec for {rel_path} must be an object")
+        target = tmp_root / rel_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if "json" in spec:
+            target.write_text(
+                json.dumps(spec["json"], indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+        elif "raw" in spec:
+            target.write_text(str(spec["raw"]), encoding="utf-8")
+        else:
+            raise ValueError(f"input spec for {rel_path} requires json or raw")
+
+def write_artifacts_from_spec(tmp_root: pathlib.Path, spec_map: Dict[str, object]) -> None:
+    for rel_path in sorted(spec_map):
+        spec = spec_map[rel_path]
+        if not isinstance(spec, dict):
+            raise ValueError(f"input spec for {rel_path} must be an object")
+        target = tmp_root / rel_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if "json" in spec:
+            target.write_text(
+                json.dumps(spec["json"], indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+        elif "raw" in spec:
+            target.write_text(str(spec["raw"]), encoding="utf-8")
+        elif spec.get("delete") is True:
+            target.unlink(missing_ok=True)
+        else:
+            raise ValueError(f"input spec for {rel_path} requires json, raw, or delete=true")
+
+def trigger_types(triggers_artifact: Dict[str, object]) -> List[str]:
+    raw = triggers_artifact.get("triggers", [])
+    if not isinstance(raw, list):
+        return []
+    out = []
+    for item in raw:
+        if isinstance(item, dict):
+            value = item.get("trigger_type", "")
+            if isinstance(value, str) and value:
+                out.append(value)
+    return sorted(set(out))
 
 results = []
-
-for scenario in scenarios:
-    fixture_dir = fixture_root / scenario["fixture"]
-    if not fixture_dir.exists():
-        raise SystemExit(f"Missing fixture directory: {fixture_dir}")
+for fixture_path in fixture_paths:
+    fixture = load_json(fixture_path)
+    scenario_id = str(fixture.get("scenario_id", "")).strip() or fixture_path.stem
+    event_name = str(fixture.get("event_name", "")).strip() or "unknown"
+    expect = fixture.get("expect", {})
+    if not isinstance(expect, dict):
+        raise SystemExit(f"Fixture {fixture_path} has non-object expect")
 
     with tempfile.TemporaryDirectory(prefix="clarification-matrix-") as tmp:
-        workspace = pathlib.Path(tmp)
-        shutil.copytree(fixture_dir, workspace, dirs_exist_ok=True)
-
-        env = os.environ.copy()
-        env["GITHUB_EVENT_NAME"] = scenario["event_name"]
-
-        run = subprocess.run(
-            [str(validator_script)],
-            cwd=workspace,
-            env=env,
-            capture_output=True,
+        tmp_root = pathlib.Path(tmp)
+        write_fixture_inputs(tmp_root, fixture)
+        proc = subprocess.run(
+            [str(validator)],
+            cwd=tmp_root,
+            env={**os.environ, "GITHUB_EVENT_NAME": event_name},
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
+            check=False,
         )
+        post_validator_overrides = fixture.get("post_validator_overrides", {})
+        if post_validator_overrides:
+            if not isinstance(post_validator_overrides, dict):
+                raise SystemExit(f"Fixture {fixture_path} has non-object post_validator_overrides")
+            write_artifacts_from_spec(tmp_root, post_validator_overrides)
 
-        triggers_path = workspace / "artifacts/policy/ambiguity-triggers.json"
-        validation_path = workspace / "artifacts/policy/clarification-validation.json"
-        expect_artifacts = scenario.get("expect_artifacts", True)
-        artifacts_exist = triggers_path.exists() and validation_path.exists()
+        validation_path = tmp_root / "artifacts/policy/clarification-validation.json"
+        triggers_path = tmp_root / "artifacts/policy/ambiguity-triggers.json"
+        guardrail_path = tmp_root / "artifacts/policy/clarification-event-gating-guardrail.json"
 
-        if not artifacts_exist:
-            assertions = [
-                {
-                    "name": "artifacts_exist",
-                    "expected": expect_artifacts,
-                    "actual": artifacts_exist,
-                    "pass": artifacts_exist == expect_artifacts,
-                },
-                {
-                    "name": "return_code",
-                    "expected": scenario["expect_return_code"],
-                    "actual": run.returncode,
-                    "pass": run.returncode == scenario["expect_return_code"],
-                },
-            ]
-            if "expect_error_contains" in scenario:
-                combined_output = (run.stdout or "") + "\n" + (run.stderr or "")
-                assertions.append(
+        validation = load_json(validation_path, strict=False) if validation_path.exists() else {}
+        triggers = load_json(triggers_path, strict=False) if triggers_path.exists() else {}
+        observed_trigger_types = trigger_types(triggers)
+        guardrail_proc = subprocess.run(
+            [str(guardrail)],
+            cwd=tmp_root,
+            env={
+                **os.environ,
+                "MATRIX_SCENARIO_ID": scenario_id,
+                "MATRIX_FIXTURE_PATH": str(fixture_path.relative_to(repo_root)),
+            },
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=False,
+        )
+        guardrail_payload = load_json(guardrail_path, strict=False) if guardrail_path.exists() else {}
+
+        checks: List[str] = []
+        failures: List[str] = []
+        expectation_diffs: List[Dict[str, object]] = []
+
+        def check_equal(key: str, observed, expected) -> None:
+            checks.append(key)
+            if observed != expected:
+                failures.append(f"{key}: expected {expected!r}, observed {observed!r}")
+                expectation_diffs.append(
                     {
-                        "name": "error_contains_expected_text",
-                        "expected": scenario["expect_error_contains"],
-                        "actual": scenario["expect_error_contains"] in combined_output,
-                        "pass": scenario["expect_error_contains"] in combined_output,
+                        "check": key,
+                        "expected": expected,
+                        "observed": observed,
                     }
                 )
-            results.append(
+
+        if "exit_code" in expect:
+            check_equal("exit_code", proc.returncode, expect["exit_code"])
+        if "validation_artifact_present" in expect:
+            check_equal("validation_artifact_present", validation_path.exists(), expect["validation_artifact_present"])
+        if "status" in expect:
+            check_equal("status", validation.get("status", ""), expect["status"])
+        if "required_clarification" in expect:
+            check_equal(
+                "required_clarification",
+                bool(validation.get("required_clarification", False)),
+                bool(expect["required_clarification"]),
+            )
+        if "target_scope_required" in expect:
+            check_equal(
+                "target_scope_required",
+                bool(validation.get("target_scope_required", False)),
+                bool(expect["target_scope_required"]),
+            )
+        if "input_artifact_error_count" in expect:
+            check_equal(
+                "input_artifact_error_count",
+                int(validation.get("input_artifact_error_count", 0)),
+                int(expect["input_artifact_error_count"]),
+            )
+        if "contains_errors" in expect:
+            checks.append("contains_errors")
+            observed_errors = [str(item) for item in validation.get("errors", []) if isinstance(item, str)]
+            missing_error_snippets = []
+            for required_substring in expect["contains_errors"]:
+                if not any(required_substring in observed for observed in observed_errors):
+                    missing_error_snippets.append(required_substring)
+            if missing_error_snippets:
+                failures.append(f"contains_errors: missing {missing_error_snippets}")
+                expectation_diffs.append(
+                    {
+                        "check": "contains_errors",
+                        "expected_contains": sorted(expect["contains_errors"]),
+                        "observed": observed_errors,
+                    }
+                )
+        if "guardrail_status" in expect:
+            check_equal("guardrail_status", guardrail_payload.get("status", ""), expect["guardrail_status"])
+        if "guardrail_contains_error_codes" in expect:
+            checks.append("guardrail_contains_error_codes")
+            observed_codes = sorted(
                 {
-                    "scenario": scenario["id"],
-                    "event_name": scenario["event_name"],
-                    "status": "pass" if all(item["pass"] for item in assertions) else "fail",
-                    "return_code": run.returncode,
-                    "assertions": assertions,
-                    "stdout": run.stdout,
-                    "stderr": run.stderr,
+                    err.get("code", "")
+                    for err in guardrail_payload.get("scenario_errors", [])
+                    if isinstance(err, dict) and isinstance(err.get("code", ""), str)
                 }
             )
-            continue
+            expected_codes = set(expect["guardrail_contains_error_codes"])
+            missing_codes = sorted(code for code in expected_codes if code not in observed_codes)
+            if missing_codes:
+                failures.append(f"guardrail_contains_error_codes: missing {missing_codes}")
+                expectation_diffs.append(
+                    {
+                        "check": "guardrail_contains_error_codes",
+                        "expected_contains": sorted(expected_codes),
+                        "observed": observed_codes,
+                    }
+                )
+        if "contains_trigger_types" in expect:
+            checks.append("contains_trigger_types")
+            expected = set(expect["contains_trigger_types"])
+            missing = sorted(t for t in expected if t not in observed_trigger_types)
+            if missing:
+                failures.append(f"contains_trigger_types: missing {missing}")
+                expectation_diffs.append(
+                    {
+                        "check": "contains_trigger_types",
+                        "expected_contains": sorted(expected),
+                        "observed": observed_trigger_types,
+                    }
+                )
+        if "excludes_trigger_types" in expect:
+            checks.append("excludes_trigger_types")
+            expected = set(expect["excludes_trigger_types"])
+            present = sorted(t for t in expected if t in observed_trigger_types)
+            if present:
+                failures.append(f"excludes_trigger_types: present {present}")
+                expectation_diffs.append(
+                    {
+                        "check": "excludes_trigger_types",
+                        "expected_excludes": sorted(expected),
+                        "observed": observed_trigger_types,
+                    }
+                )
 
-        triggers = json.loads(triggers_path.read_text(encoding="utf-8"))
-        validation = json.loads(validation_path.read_text(encoding="utf-8"))
-        t002_present = any(
-            trigger.get("trigger_type") == "missing_target_scope"
-            for trigger in triggers.get("triggers", [])
-            if isinstance(trigger, dict)
-        )
-
-        assertions = []
-        assertions.append(
-            {
-                "name": "t002_event_gating",
-                "expected": scenario["expect_t002"],
-                "actual": t002_present,
-                "pass": t002_present == scenario["expect_t002"],
-            }
-        )
-
-        has_contract_keys = all(
-            key in validation
-            for key in ("event_name", "target_scope_required", "required_clarification", "errors")
-        )
-        assertions.append(
-            {
-                "name": "clarification_validation_contract_keys",
-                "expected": True,
-                "actual": has_contract_keys,
-                "pass": has_contract_keys,
-            }
-        )
-
-        assertions.append(
-            {
-                "name": "event_name_echoed",
-                "expected": scenario["event_name"],
-                "actual": validation.get("event_name"),
-                "pass": validation.get("event_name") == scenario["event_name"],
-            }
-        )
-        assertions.append(
-            {
-                "name": "target_scope_required_flag",
-                "expected": scenario["expect_target_scope_required"],
-                "actual": validation.get("target_scope_required"),
-                "pass": validation.get("target_scope_required")
-                == scenario["expect_target_scope_required"],
-            }
-        )
-        assertions.append(
-            {
-                "name": "required_clarification_matches_t002",
-                "expected": scenario["expect_required_clarification"],
-                "actual": validation.get("required_clarification"),
-                "pass": validation.get("required_clarification")
-                == scenario["expect_required_clarification"],
-            }
-        )
-        assertions.append(
-            {
-                "name": "return_code",
-                "expected": scenario["expect_return_code"],
-                "actual": run.returncode,
-                "pass": run.returncode == scenario["expect_return_code"],
-            }
-        )
-        assertions.append(
-            {
-                "name": "errors_is_array",
-                "expected": "list",
-                "actual": type(validation.get("errors")).__name__,
-                "pass": isinstance(validation.get("errors"), list),
-            }
-        )
-        if "expect_error_contains" in scenario:
-            assertions.append(
-                {
-                    "name": "error_contains_expected_text",
-                    "expected": scenario["expect_error_contains"],
-                    "actual": any(
-                        scenario["expect_error_contains"] in error
-                        for error in validation.get("errors", [])
-                    ),
-                    "pass": any(
-                        scenario["expect_error_contains"] in error
-                        for error in validation.get("errors", [])
-                    ),
-                }
-            )
-
-        scenario_pass = all(assertion["pass"] for assertion in assertions)
         results.append(
             {
-                "scenario": scenario["id"],
-                "event_name": scenario["event_name"],
-                "status": "pass" if scenario_pass else "fail",
-                "return_code": run.returncode,
-                "assertions": assertions,
-                "trigger_count": triggers.get("trigger_count"),
-                "missing_target_scope_detected": t002_present,
-                "required_clarification": validation.get("required_clarification"),
-                "validation_status": validation.get("status"),
-                "errors": validation.get("errors"),
-                "stdout": run.stdout,
-                "stderr": run.stderr,
+                "scenario_id": scenario_id,
+                "event_name": event_name,
+                "fixture_path": str(fixture_path.relative_to(repo_root)),
+                "status": "pass" if not failures else "fail",
+                "checks": checks,
+                "failures": failures,
+                "expectation_diffs": expectation_diffs,
+                "observed": {
+                    "exit_code": proc.returncode,
+                    "validation_artifact_present": validation_path.exists(),
+                    "validation_status": validation.get("status", ""),
+                    "target_scope_required": validation.get("target_scope_required", False),
+                    "required_clarification": validation.get("required_clarification", False),
+                    "input_artifact_error_count": int(validation.get("input_artifact_error_count", 0)),
+                    "trigger_types": observed_trigger_types,
+                    "guardrail_status": guardrail_payload.get("status", ""),
+                    "guardrail_error_codes": sorted(
+                        {
+                            err.get("code", "")
+                            for err in guardrail_payload.get("scenario_errors", [])
+                            if isinstance(err, dict) and isinstance(err.get("code", ""), str)
+                        }
+                    ),
+                },
+                "stdout": proc.stdout.strip().splitlines(),
+                "guardrail_stdout": guardrail_proc.stdout.strip().splitlines(),
             }
         )
 
-matrix_payload = {
-    "status": "pass" if all(item["status"] == "pass" for item in results) else "fail",
+results.sort(key=lambda item: item["scenario_id"])
+failed = [item for item in results if item["status"] != "pass"]
+payload = {
+    "status": "pass" if not failed else "fail",
     "scenario_count": len(results),
-    "scenarios": results,
+    "failed_count": len(failed),
+    "results": results,
 }
 
-matrix_output_path.write_text(
-    json.dumps(matrix_payload, indent=2, sort_keys=True) + "\n",
-    encoding="utf-8",
-)
+output_json = output_dir / "clarification-validator-matrix.json"
+output_json.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 summary_lines = [
-    "# Clarification Validator Event Matrix",
+    "# Clarification Validator Matrix Summary",
     "",
-    f"- Overall status: `{matrix_payload['status']}`",
-    f"- Scenario count: `{matrix_payload['scenario_count']}`",
+    f"- Overall status: `{payload['status']}`",
+    f"- Scenarios: `{payload['scenario_count']}`",
+    f"- Failed: `{payload['failed_count']}`",
     "",
-    "| Scenario | Event | Expected T002 | Actual T002 | Expected RC | Actual RC | Status |",
-    "| --- | --- | --- | --- | --- | --- | --- |",
+    "| Scenario | Event | Result | Triggers |",
+    "| --- | --- | --- | --- |",
 ]
-
-for scenario in results:
-    t002_assertion = next(
-        (assertion for assertion in scenario["assertions"] if assertion["name"] == "t002_event_gating"),
-        None,
-    )
-    rc_assertion = next(
-        (assertion for assertion in scenario["assertions"] if assertion["name"] == "return_code"),
-        None,
-    )
-    expected_t002 = t002_assertion["expected"] if t002_assertion else "n/a"
-    actual_t002 = t002_assertion["actual"] if t002_assertion else "n/a"
-    expected_rc = rc_assertion["expected"] if rc_assertion else "n/a"
-    actual_rc = rc_assertion["actual"] if rc_assertion else "n/a"
+for item in results:
+    triggers_csv = ", ".join(item["observed"]["trigger_types"]) or "-"
     summary_lines.append(
-        "| {scenario_id} | {event_name} | `{expected}` | `{actual}` | `{expected_rc}` | `{actual_rc}` | `{status}` |".format(
-            scenario_id=scenario["scenario"],
-            event_name=scenario["event_name"],
-            expected=str(expected_t002).lower(),
-            actual=str(actual_t002).lower(),
-            expected_rc=expected_rc,
-            actual_rc=actual_rc,
-            status=scenario["status"],
-        )
+        f"| `{item['scenario_id']}` | `{item['event_name']}` | `{item['status']}` | `{triggers_csv}` |"
     )
+if failed:
+    summary_lines.append("")
+    summary_lines.append("## Failures")
+    for item in failed:
+        summary_lines.append(f"- `{item['scenario_id']}`: " + "; ".join(item["failures"]))
+        for diff in item.get("expectation_diffs", []):
+            summary_lines.append(f"  - `{diff['check']}` expected vs observed mismatch")
 
-summary_output_path.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
+output_md = output_dir / "clarification-validator-matrix-summary.md"
+output_md.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
 
-if matrix_payload["status"] != "pass":
-    print(json.dumps(matrix_payload, indent=2))
+if failed:
     raise SystemExit(1)
-
-print(f"Wrote {matrix_output_path}")
-print(f"Wrote {summary_output_path}")
 PY
