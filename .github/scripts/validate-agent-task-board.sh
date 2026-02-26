@@ -15,7 +15,8 @@ errors = []
 checks = {
     "board_exists": "pass",
     "header_fields_present": "pass",
-    "task_sections_present": "pass",
+    "active_tasks_section_valid": "pass",
+    "queued_tasks_section_valid": "pass",
     "task_schema_valid": "pass",
     "owner_agents_valid": "pass",
     "task_ids_unique": "pass",
@@ -37,6 +38,12 @@ if not board_path.exists():
     sys.exit(1)
 
 content = board_path.read_text(encoding="utf-8")
+
+
+def section_body(markdown: str, heading: str) -> str:
+    pattern = rf"(?ms)^## {re.escape(heading)}\s*\n(.*?)(?=^## |\Z)"
+    match = re.search(pattern, markdown)
+    return match.group(1).strip() if match else ""
 
 version_match = re.search(r"(?m)^BoardVersion:\s*(\S+)\s*$", content)
 hash_match = re.search(r"(?m)^BoardHash:\s*([0-9a-fA-F]+)\s*$", content)
@@ -61,22 +68,6 @@ if declared_hash and declared_hash != computed_hash:
 
 tasks = []
 
-section_specs = [
-    ("ActiveTasks", "QueuedTasks"),
-    ("QueuedTasks", "DispatchNotes"),
-]
-section_blocks = {}
-for section_name, next_name in section_specs:
-    section_match = re.search(
-        rf"(?ms)^## {section_name}\s*$\n(.*?)(?=^## {next_name}\s*$|\Z)",
-        content,
-    )
-    if not section_match:
-        checks["task_sections_present"] = "fail"
-        errors.append(f"Missing required section: ## {section_name}")
-        section_blocks[section_name] = ""
-    else:
-        section_blocks[section_name] = section_match.group(1)
 
 def extract_bullets(text_match):
     if not text_match:
@@ -89,14 +80,10 @@ def extract_bullets(text_match):
             values.append(line[2:].strip())
     return values
 
-task_counts = {"ActiveTasks": 0, "QueuedTasks": 0}
-for section_name, block_text in section_blocks.items():
-    task_blocks = re.split(r"(?m)^### Task\s*$", block_text)
-    if len(task_blocks) <= 1:
-        checks["task_schema_valid"] = "fail"
-        errors.append(f"Section {section_name} must contain at least one '### Task' block")
-        continue
 
+def parse_tasks_for_section(section_name: str, section_text: str):
+    section_tasks = []
+    task_blocks = re.split(r"(?m)^### Task\s*$", section_text)
     for block in task_blocks[1:]:
         task_id_match = re.search(r"(?m)^TaskID:\s*(\S+)\s*$", block)
         owner_match = re.search(r"(?m)^OwnerAgent:\s*(\S+)\s*$", block)
@@ -114,8 +101,33 @@ for section_name, block_text in section_blocks.items():
             "acceptance": extract_bullets(acceptance_match),
             "evidence_artifacts": extract_bullets(evidence_match),
         }
-        tasks.append(task)
-        task_counts[section_name] = task_counts.get(section_name, 0) + 1
+        section_tasks.append(task)
+    return section_tasks
+
+
+active_section = section_body(content, "ActiveTasks")
+queued_section = section_body(content, "QueuedTasks")
+
+if not active_section:
+    checks["active_tasks_section_valid"] = "fail"
+    errors.append("Missing required section: ## ActiveTasks")
+if not queued_section:
+    checks["queued_tasks_section_valid"] = "fail"
+    errors.append("Missing required section: ## QueuedTasks")
+
+if active_section:
+    active_tasks = parse_tasks_for_section("ActiveTasks", active_section)
+    if not active_tasks:
+        checks["active_tasks_section_valid"] = "fail"
+        errors.append("Section ## ActiveTasks must contain at least one '### Task' block")
+    tasks.extend(active_tasks)
+
+if queued_section:
+    queued_tasks = parse_tasks_for_section("QueuedTasks", queued_section)
+    if not queued_tasks:
+        checks["queued_tasks_section_valid"] = "fail"
+        errors.append("Section ## QueuedTasks must contain at least one '### Task' block")
+    tasks.extend(queued_tasks)
 
 required_ok = True
 for idx, task in enumerate(tasks):
@@ -140,7 +152,7 @@ for idx, task in enumerate(tasks):
 
 if not tasks:
     required_ok = False
-    errors.append("Board must contain task blocks under ActiveTasks and QueuedTasks")
+    errors.append("Board must contain at least one '### Task' block")
 
 if not required_ok:
     checks["task_schema_valid"] = "fail"
@@ -182,9 +194,9 @@ payload = {
     "declared_hash": declared_hash,
     "computed_hash": computed_hash,
     "checks": checks,
+    "active_task_count": len([t for t in tasks if t.get("section") == "ActiveTasks"]),
+    "queued_task_count": len([t for t in tasks if t.get("section") == "QueuedTasks"]),
     "task_count": len(tasks),
-    "active_task_count": task_counts.get("ActiveTasks", 0),
-    "queued_task_count": task_counts.get("QueuedTasks", 0),
     "tasks": tasks,
     "errors": errors,
 }
