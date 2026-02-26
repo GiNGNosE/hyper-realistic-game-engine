@@ -63,14 +63,25 @@ CI must reject when:
 
 If no ambiguity trigger exists, the artifact is optional and not required to pass.
 
-## Compatibility Note
+### Event-Scoped Trigger Semantics
 
-This change is a behavioral refinement to trigger activation semantics for
-`missing_target_scope`. It does not remove trigger types or required schema fields
-from the clarification-log contract.
+`missing_target_scope` is conditionally event-scoped. It is required only for events where
+changed-path scope is expected.
+
+| Event | Scope expectation | `missing_target_scope` behavior |
+| --- | --- | --- |
+| `pull_request` | Scoped | Trigger is evaluated and can be emitted |
+| `push` | Scoped | Trigger is evaluated and can be emitted |
+| `workflow_dispatch` | Unscoped | Trigger is not evaluated |
+| `schedule` | Unscoped | Trigger is not evaluated |
+
+### Compatibility Note
+
+This update refines trigger behavior by event context and does not remove any schema fields from
+`clarification-log.json`, `ambiguity-triggers.json`, or `clarification-validation.json`.
 
 ## Related Artifacts
 
-- `artifacts/policy/ambiguity-triggers.json`: produced by CI trigger detector and
-  treated as source of truth for whether clarification is mandatory.
+- `artifacts/policy/ambiguity-triggers.json`: produced by CI trigger detector and treated as
+  source of truth for whether clarification is mandatory.
 - `artifacts/policy/clarification-log.json`: agent-provided clarification proof.

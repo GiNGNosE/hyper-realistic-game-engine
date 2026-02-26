@@ -11,8 +11,11 @@ YAMLLINT_VERSION="${YAMLLINT_VERSION:-1.38.0}"
 sudo apt-get update
 sudo apt-get install -y curl jq python3-pip xz-utils npm "clang-tidy-${LLVM_MAJOR}" "clang-format-${LLVM_MAJOR}"
 
+# Ensure canonical command names resolve deterministically on runner images.
 sudo ln -sf "/usr/bin/clang-tidy-${LLVM_MAJOR}" /usr/local/bin/clang-tidy
 sudo ln -sf "/usr/bin/clang-format-${LLVM_MAJOR}" /usr/local/bin/clang-format
+sudo ln -sf "/usr/bin/clang-tidy-${LLVM_MAJOR}" /usr/bin/clang-tidy
+sudo ln -sf "/usr/bin/clang-format-${LLVM_MAJOR}" /usr/bin/clang-format
 
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "${tmp_dir}"' EXIT
@@ -38,4 +41,13 @@ sudo npm install -g "markdownlint-cli2@${MARKDOWNLINT_CLI2_VERSION}"
 python3 -m pip install --user --disable-pip-version-check "yamllint==${YAMLLINT_VERSION}"
 if [[ -d "${HOME}/.local/bin" ]]; then
   echo "${HOME}/.local/bin" >>"${GITHUB_PATH:-/dev/null}" || true
+  if [[ -x "${HOME}/.local/bin/yamllint" ]]; then
+    sudo ln -sf "${HOME}/.local/bin/yamllint" /usr/local/bin/yamllint
+    sudo ln -sf "${HOME}/.local/bin/yamllint" /usr/bin/yamllint
+  fi
 fi
+
+# Fail fast with explicit diagnostics if required tools are not resolvable.
+clang-tidy --version >/dev/null
+clang-format --version >/dev/null
+yamllint --version >/dev/null
