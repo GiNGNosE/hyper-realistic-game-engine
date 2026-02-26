@@ -56,22 +56,22 @@ CI emits `ambiguity-triggers.json` from policy checks. Initial triggers:
 
 Each trigger maps to at least one required clarification entry when active.
 
-### Trigger to Event Context Mapping
+### Event-to-Trigger Scope Mapping
 
-| Trigger type | pull_request | push | workflow_dispatch | schedule |
-| --- | --- | --- | --- | --- |
-| `missing_acceptance_criteria` | active | active | active | active |
-| `multiple_valid_implementations` | active | active | active | active |
-| `missing_target_scope` | active | active | inactive | inactive |
-| `governance_conflict` | active | active | active | active |
+`missing_target_scope` is event-scoped and only applies when changed-path scope is expected.
 
-`missing_target_scope` is evaluated only for scoped events (`pull_request`, `push`) where target
-scope evidence is mandatory.
+| Event | Scope expectation | `missing_target_scope` |
+| --- | --- | --- |
+| `pull_request` | Scoped | Evaluated |
+| `push` | Scoped | Evaluated |
+| `workflow_dispatch` | Unscoped | Not evaluated |
+| `schedule` | Unscoped | Not evaluated |
 
-## Compatibility Note
+### Compatibility Note
 
-Event-scoped activation of `missing_target_scope` is a behavioral refinement only. Artifact schemas
-and required field names remain unchanged.
+This is a behavioral refinement only. Artifact contracts stay backward compatible with no field
+removal in `artifacts/policy/ambiguity-triggers.json` or
+`artifacts/policy/clarification-validation.json`.
 
 ## Merge-Blocking Conditions
 
@@ -116,5 +116,7 @@ The validator set was exercised with synthetic artifacts to confirm fail/pass se
 - Agent assignment source of truth is `docs/governance/agent-task-board.md`.
 - Reviewer and delivery lanes must validate assignment metadata (`TaskBoardVersion`, `TaskID`,
   `OwnerAgent`) against that board.
+- Clarification event-gating semantics are protected by a dedicated deterministic CI guardrail
+  artifact at `artifacts/policy/clarification-event-gating-guardrail.json`.
 - This model does not relax any existing governance thresholds.
 - Schema versions must be incremented with compatibility notes when contracts evolve.

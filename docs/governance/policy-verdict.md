@@ -105,6 +105,7 @@ Lane B must run through the Lane Performance Gate (LPG) contract:
 - `artifacts/policy/rule-coverage-validation.json`
 - `artifacts/policy/ambiguity-triggers.json`
 - `artifacts/policy/clarification-validation.json`
+- `artifacts/policy/clarification-event-gating-guardrail.json`
 - `artifacts/policy/proof-integrity-validation.json`
 - `artifacts/policy/final-verdict.json`
 - `artifacts/policy/reviewer-agent-verdict.json`
@@ -139,8 +140,24 @@ This is a behavioral refinement of trigger conditions; it does not remove requir
 
 Promotion must fail if any proof gate fails.
 
-`policy-verdict` also includes a mandatory `lane-branch-governance` lane that enforces repository
-branch strategy policy for pull requests.
+Event-scoped clarification semantics for `missing_target_scope`:
+
+| Event | Scope expectation | `missing_target_scope` |
+| --- | --- | --- |
+| `pull_request` | Scoped | Evaluated |
+| `push` | Scoped | Evaluated |
+| `workflow_dispatch` | Unscoped | Not evaluated |
+| `schedule` | Unscoped | Not evaluated |
+
+Compatibility note: this is a behavioral refinement and does not remove fields from
+`artifacts/policy/ambiguity-triggers.json` or
+`artifacts/policy/clarification-validation.json`.
+
+`policy-verdict` also includes a mandatory `lane-branch-governance` lane that enforces
+repository branch strategy policy for pull requests.
+
+`policy-verdict` includes a mandatory `clarification-event-gating-guardrail` lane that
+deterministically validates scoped/unscoped event behavior and fails on regressions.
 
 ### Merge-Blocking Failure Conditions
 
