@@ -3,7 +3,7 @@
 <!-- markdownlint-disable MD022 MD024 -->
 
 BoardVersion: 2026-02-27.1
-BoardHash: c468fad2253bc95d19bb644f39a66d1bacf1fc4c1b82ee1832e5af70084713c0
+BoardHash: a0279ef76047d4c9a901a65b4a4a713c388853d5f9a418186ea75815d2aa0904
 ## ActiveTasks
 
 ### Task
@@ -73,7 +73,28 @@ EvidenceArtifacts:
 - `artifacts/policy/agent-delivery-validation.json`
 - `artifacts/policy/agent-task-board-validation.json`
 
+### Task
+
+TaskID: TB-004
+OwnerAgent: agent1
+Status: assigned
+ScopePaths:
+
+- `.github/scripts/validate-clarification-event-gating.sh`
+- `.github/scripts/validate-clarification-log.sh`
+
+Acceptance:
+
+- Guardrail never crashes on missing `clarification-validation.json` or `ambiguity-triggers.json`.
+- Missing/invalid JSON artifacts are reported as deterministic scenario errors in guardrail output.
+- Guardrail still writes `artifacts/policy/clarification-event-gating-guardrail.json` on failures.
+
+EvidenceArtifacts:
+
+- `artifacts/policy/clarification-event-gating-guardrail.json`
+
 ## DispatchNotes
 
 - Orchestrator and reviewer update assignments in this file only.
 - Agents must reference `TaskBoardVersion` and `TaskID` in PR body metadata.
+- When a task transitions to `done`, the owner agent must commit, push, and open or update the PR in the same cycle.
