@@ -1,0 +1,23 @@
+---
+description: Enforce API and ABI stability tiers, deprecation, and breaking-change controls
+alwaysApply: true
+---
+
+# API ABI Versioning Contract
+
+## Must
+- Classify interfaces as `experimental`, `stable`, or `deprecated`.
+- Require compatibility notes and migration plan for breaking changes.
+- Use deprecation markers with target removal window.
+- Keep subsystem contracts aligned with architecture APIs:
+  - snapshot/event loading,
+  - render reference,
+  - audio synthesis,
+  - surrogate baking.
+
+## Must Not
+- Do not merge breaking changes into `stable` interfaces without migration evidence.
+- Do not remove deprecated surfaces before deadline and replacement validation.
+
+## Required Evidence
+- Interface diff summary and compatibility impact statement.

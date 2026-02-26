@@ -1,0 +1,34 @@
+---
+description: Require explicit clarification before acting on ambiguous or incomplete requirements
+alwaysApply: true
+---
+
+# Clarification First
+
+## Must
+- Ask the user targeted clarification questions before implementation when intent is not 100% clear.
+- Ask the user when required inputs are missing (scope, constraints, acceptance criteria, target paths, thresholds, or phase).
+- Ask the user to choose when multiple materially different implementations are valid.
+- State assumptions explicitly only after user confirmation.
+- Record clarification evidence when deterministic ambiguity triggers fire.
+
+## Deterministic Ambiguity Triggers
+- `missing_acceptance_criteria`
+- `multiple_valid_implementations`
+- `missing_target_scope`
+- `governance_conflict`
+
+When one or more trigger types are detected, `clarification-log.json` is mandatory.
+
+## Required Evidence
+- `ambiguity-triggers.json` emitted by CI detector.
+- `clarification-log.json` with `question_asked`, `user_response`, and `resolved_decision` for each detected trigger type.
+
+## Must Not
+- Do not proceed by filling gaps with inference for governance-critical or architecture-impacting decisions.
+- Do not silently select defaults when missing information can change behavior, quality gates, or risk profile.
+
+## Reject Conditions
+- Requirement ambiguity remains unresolved.
+- Critical information is missing and no user confirmation was obtained.
+- Ambiguity trigger exists but matching clarification evidence is missing or incomplete.

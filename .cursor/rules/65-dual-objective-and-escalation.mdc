@@ -1,0 +1,17 @@
+---
+description: Enforce co-equal quality and performance objectives with hard escalation
+alwaysApply: true
+---
+
+# Dual Objective and Escalation
+
+- Treat scientific fidelity and runtime performance as co-primary objectives.
+- Reject any plan or change that improves one objective by silently degrading the other.
+- Require pass conditions from both objective groups before promotion:
+  - quality/determinism (`M*`, `V*`, `A*`, `D*`),
+  - runtime performance budgets for the active phase.
+- When a red trigger fires, enter correction mode:
+  - freeze new feature scope in impacted area,
+  - focus only on mitigation and verification,
+  - resume normal scope only after recovery evidence passes.
+- Use `docs/governance/risk-register.md` as trigger authority.

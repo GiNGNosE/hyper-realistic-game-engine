@@ -1,0 +1,21 @@
+---
+description: Enforce phase-0 break-glass waiver controls and risk-bound expiry
+alwaysApply: true
+---
+
+# Waiver and Risk Control
+
+## Must
+- Allow waivers from Phase 0 only as break-glass exceptions.
+- Require fields: scope, reason, owner (`self`), risk level, rollback plan, expiry.
+- Keep waivers short-lived and subsystem-scoped.
+- Auto-fail policy checks on expired waivers.
+- Reference risk status from `docs/governance/risk-register.md`.
+
+## Must Not
+- Do not reuse waivers silently across unrelated changes.
+- Do not open broad waivers that cross multiple subsystems.
+- Do not promote with active red risk unless waiver explicitly covers it and is unexpired.
+
+## Required Evidence
+- Waiver manifest entry and matching CI validation result.

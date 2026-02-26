@@ -1,0 +1,21 @@
+---
+description: Enforce deterministic build/runtime envelope and replay integrity
+alwaysApply: true
+---
+
+# Determinism Envelope and Replay
+
+## Must
+- Run deterministic replay checks for simulation state-impacting changes.
+- Use pinned replay environment for deterministic checks and emit environment fingerprint.
+- Record RNG algorithm, seed, and stream partition policy in test artifacts.
+- Keep stable ordering for state/event serialization and replay-critical reductions.
+- Define acceptable platform variance budget explicitly for non-reference environments.
+
+## Must Not
+- Do not enable fast-math or nondeterministic execution modes in reference replay profile.
+- Do not accept replay hash drift on canonical deterministic suite.
+
+## Required Evidence
+- Replay hash report (`D1`) and event stream consistency report (`D2`).
+- Environment fingerprint artifact (compiler, OS/runtime, CPU/GPU class, key flags).

@@ -1,0 +1,19 @@
+---
+description: Enforce phase-mapped validation matrix and metric gate conformance
+alwaysApply: true
+---
+
+# Validation Matrix Enforcement
+
+## Must
+- Map each change to required test classes and active phase gates.
+- Enforce metric conformance against thresholds from `docs/pipeline/validation-metrics.md`.
+- Require determinism, resilience, soak, perf, and KPI tests when applicable by phase.
+- Block promotion when any required metric or scenario gate fails.
+
+## Must Not
+- Do not duplicate threshold values in ad-hoc scripts unless generated from source docs.
+- Do not claim pass status without per-scenario pass/fail output.
+
+## Required Evidence
+- Matrix report showing required vs executed checks and results.

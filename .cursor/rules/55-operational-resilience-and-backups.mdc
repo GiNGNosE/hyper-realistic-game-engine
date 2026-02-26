@@ -1,0 +1,13 @@
+---
+description: Enforce backup integrity, restore drills, and recovery reporting
+alwaysApply: true
+---
+
+# Operational Resilience and Backups
+
+- Treat baseline artifacts and truth references as first-class assets with integrity checks.
+- Require checksums and lineage metadata for promoted baseline archives.
+- Require periodic restore drill evidence with measured RPO and RTO.
+- If restore drill fails target, block promotion-related governance updates until corrective action is documented.
+- Never delete historical recovery reports; append corrections and supersession notes instead.
+- Follow continuity requirements from `docs/governance/continuity-recovery.md`.

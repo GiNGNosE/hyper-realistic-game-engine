@@ -1,0 +1,21 @@
+---
+description: Define mandatory C++ safety subset and forbidden patterns
+alwaysApply: true
+---
+
+# C++ Safety Subset
+
+## Must
+- Use explicit ownership semantics and RAII for resource lifetimes.
+- Prefer bounded/view types over raw buffer arithmetic in new code.
+- Keep threading boundaries explicit and annotate shared-state ownership.
+- Add invariant checks at module boundaries for schema, IDs, and event ordering.
+
+## Must Not
+- Do not introduce raw owning pointers in new core code.
+- Do not swallow errors silently in simulation/render/audio critical paths.
+- Do not merge concurrency changes without race-safety validation evidence.
+
+## Required Evidence
+- Safety-impact note for memory/concurrency changes.
+- Test or sanitizer evidence for touched ownership/concurrency paths.

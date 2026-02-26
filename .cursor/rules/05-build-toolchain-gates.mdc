@@ -1,0 +1,24 @@
+---
+description: Enforce compiler, CMake, warnings, sanitizer, and static-analysis gates
+alwaysApply: true
+---
+
+# Build Toolchain Gates
+
+## Scope
+- C++ and build files: `**/*.cpp`, `**/*.cc`, `**/*.cxx`, `**/*.h`, `**/*.hpp`, `CMakeLists.txt`, `**/*.cmake`.
+
+## Must
+- Pin minimum language and compiler versions for deterministic reference builds.
+- Enforce warnings-as-errors for policy-protected targets.
+- Run sanitizer matrix for eligible targets (ASan, UBSan, TSan where meaningful).
+- Run pinned static-analysis config in CI and include report artifact.
+- Keep CMake configuration target-scoped; avoid global compile/link flag mutation.
+
+## Must Not
+- Do not add unchecked global build flags that affect unrelated targets.
+- Do not downgrade warning/sanitizer severity to bypass failing checks.
+
+## Required Evidence
+- Build matrix summary artifact with compiler/version/flags fingerprints.
+- Sanitizer and static-analysis outputs attached to CI run.

@@ -1,0 +1,18 @@
+---
+description: Enforce 12-week cycle planning and evidence-pack closure
+alwaysApply: true
+---
+
+# Program Roadmap Governance
+
+- Operate in fixed 12-week cycles with explicit plan, build, harden, and closeout checkpoints.
+- At cycle start, define scope tied to one annual thesis capability objective.
+- At cycle close, require an evidence pack with:
+  - scenario metadata and seeds,
+  - metric pass/fail outputs,
+  - baseline deltas,
+  - ADR IDs updated in the cycle.
+- Do not mark cycle success unless both dual objectives are satisfied:
+  - scientific-grade fidelity and determinism,
+  - high real-time runtime performance.
+- If evidence is incomplete, treat cycle as incomplete rather than done.

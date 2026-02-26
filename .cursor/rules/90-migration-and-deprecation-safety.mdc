@@ -1,0 +1,19 @@
+---
+description: Enforce migration feature flags, dual-path validation, and deprecation deadlines
+alwaysApply: true
+---
+
+# Migration and Deprecation Safety
+
+## Must
+- Guard high-risk migrations behind feature flags where feasible.
+- Validate old/new paths in parallel for critical transitions until equivalence is demonstrated.
+- Record deprecations with removal timeline and replacement contract.
+- Document rollback strategy for migration PRs affecting core contracts.
+
+## Must Not
+- Do not remove legacy path before replacement passes required validation matrix.
+- Do not merge migration-only shortcuts without a closure plan.
+
+## Required Evidence
+- Dual-path comparison report and migration closure checklist.

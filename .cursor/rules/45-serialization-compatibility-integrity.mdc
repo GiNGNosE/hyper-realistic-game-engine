@@ -1,0 +1,19 @@
+---
+description: Enforce snapshot/event compatibility, integrity, and migration discipline
+alwaysApply: true
+---
+
+# Serialization Compatibility Integrity
+
+## Must
+- Preserve versioned schema contract and semantic version policy from `material-schema.md`.
+- Validate backward/forward compatibility expectations for each schema change.
+- Include integrity checks (checksums/lineage) for promoted baseline artifacts.
+- Provide migration tooling notes for major layout or chunk changes.
+
+## Must Not
+- Do not change binary layout silently in policy-protected paths.
+- Do not promote baselines with broken lineage or checksum mismatch.
+
+## Required Evidence
+- Serialization compatibility report and integrity verification artifact.

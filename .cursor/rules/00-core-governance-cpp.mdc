@@ -1,0 +1,36 @@
+---
+description: Core C++ governance invariants for solo automated enforcement
+alwaysApply: true
+---
+
+# Core Governance C++
+
+## Must
+- Treat `policy-verdict` CI status as the sole promotion authority (no human reviewer override).
+- Preserve dual objective on every promotion: fidelity/determinism + runtime performance.
+- Keep `docs/pipeline/validation-metrics.md` as threshold source of truth for `M*`, `V*`, `A*`, `D*`.
+- Require evidence artifacts for every non-trivial change: tests, determinism report, perf delta.
+- Require proof artifacts for governed changes: `rule-read-receipt.json`, rule coverage report, integrity validation report, and clarification evidence when ambiguity triggers exist.
+- Keep architectural decisions in ADRs under `docs/governance/adrs/` and index updates.
+- Ask the user for clarification before implementation when any requirement is ambiguous, conflicting, or missing critical input.
+
+## Must Not
+- Do not merge when one objective passes and the other fails.
+- Do not hardcode policy thresholds in scripts when source docs differ.
+- Do not ship undocumented waivers or expired waivers.
+- Do not bypass deterministic replay checks for simulation-affecting changes.
+- Do not infer missing requirements for governance-critical decisions.
+
+## Required Evidence
+- CI artifact bundle with lane-level pass/fail JSON.
+- Baseline delta summary and integrity references when promotion is requested.
+- ADR link for breaking interface/schema/serialization changes.
+- Proof bundle: `required-rules.json`, `rule-read-receipt-validation.json`, `rule-coverage-validation.json`, `proof-integrity-validation.json`.
+- `clarification-validation.json` when ambiguity triggers are present.
+
+## Reject Conditions
+- Missing evidence bundle.
+- Red risk active in `docs/governance/risk-register.md`.
+- Unmapped subsystem change without a policy gate.
+- Ambiguous requirements or missing critical inputs without user clarification.
+- Proof artifact mismatch against CI context (phase, commit, PR metadata, changed paths, or rule inventory hash).

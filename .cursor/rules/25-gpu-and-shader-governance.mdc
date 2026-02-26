@@ -1,0 +1,22 @@
+---
+description: Enforce governance for shader and GPU compute paths
+alwaysApply: true
+---
+
+# GPU and Shader Governance
+
+## Scope
+- Shader/kernel assets: `**/*.glsl`, `**/*.hlsl`, `**/*.wgsl`, `**/*.cu`, `**/*.cuh`, `**/*.metal`.
+
+## Must
+- Keep GPU resource lifetime and synchronization assumptions explicit.
+- Validate shader/kernel changes with correctness and perf evidence.
+- Record feature-level fallback or failure behavior for unsupported paths.
+- Align shader input/output contracts with CPU-side schema and IDs.
+
+## Must Not
+- Do not ship silent CPU/GPU contract mismatch.
+- Do not modify synchronization behavior without regression checks.
+
+## Required Evidence
+- GPU validation artifact (correctness + perf) for affected scenario set.

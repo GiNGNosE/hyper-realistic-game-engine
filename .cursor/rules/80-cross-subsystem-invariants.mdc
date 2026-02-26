@@ -1,0 +1,19 @@
+---
+description: Enforce invariants shared by simulation, render, audio, and surrogate paths
+alwaysApply: true
+---
+
+# Cross Subsystem Invariants
+
+## Must
+- Keep one material translation source of truth across simulation/render/audio.
+- Ensure audio events reference valid snapshot timeline IDs.
+- Ensure surrogates carry `truth_reference_id` and traceability metadata.
+- Keep event ordering and ID mapping stable across subsystem boundaries.
+
+## Must Not
+- Do not introduce parallel translators that reinterpret material state independently.
+- Do not emit cross-subsystem artifacts with missing lineage metadata.
+
+## Required Evidence
+- Cross-subsystem consistency check output in CI artifacts.

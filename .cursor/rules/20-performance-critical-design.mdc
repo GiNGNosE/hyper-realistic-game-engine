@@ -1,0 +1,19 @@
+---
+description: Enforce data-oriented performance design and profiling evidence
+alwaysApply: true
+---
+
+# Performance Critical Design
+
+## Must
+- Use data-oriented layouts and memory-access patterns in performance-sensitive paths.
+- Require profiling evidence for changes to hot paths (CPU/GPU).
+- Track median and P95 performance deltas against accepted baseline.
+- Keep allocation behavior explicit in critical loops and frame/step paths.
+
+## Must Not
+- Do not claim performance gains without benchmark evidence on the approved perf runner class.
+- Do not accept hidden regressions masked by workload changes.
+
+## Required Evidence
+- Before/after profiling artifact and baseline delta summary.

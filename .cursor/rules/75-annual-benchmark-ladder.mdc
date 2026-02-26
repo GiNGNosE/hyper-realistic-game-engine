@@ -1,0 +1,16 @@
+---
+description: Enforce year-over-year ratcheting of quality and runtime benchmarks
+alwaysApply: true
+---
+
+# Annual Benchmark Ladder
+
+- Maintain an annual ratchet for both fidelity and runtime performance.
+- Ratchet targets may hold or tighten; they may not relax without an ADR that defines rollback window and recovery path.
+- Keep benchmark scenarios, seeds, and runner class stable for year-over-year comparability.
+- Require cycle closeouts to report progress against current year ladder targets.
+- If annual ratchet target is missed:
+  - mark status as partial,
+  - create corrective ADR,
+  - carry unresolved target into next annual thesis.
+- Use `docs/governance/benchmark-ladder.md` as source guidance.

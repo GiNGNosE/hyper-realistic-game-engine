@@ -1,0 +1,20 @@
+---
+description: Control third-party dependency intake, pinning, and wrapper boundaries
+alwaysApply: true
+---
+
+# Dependency Governance
+
+## Must
+- Pin dependency versions and record source, purpose, and update cadence.
+- Route third-party usage through project wrappers/facades in core modules.
+- Track dependency license and compatibility status before adoption.
+- Require changelog review for dependency updates that affect determinism/perf/ABI.
+
+## Must Not
+- Do not call third-party APIs directly from critical core paths without a boundary layer.
+- Do not merge unpinned or floating dependency references in governed targets.
+
+## Required Evidence
+- Dependency intake note with risk summary and owner (`self`).
+- Wrapper boundary reference for each new core dependency.

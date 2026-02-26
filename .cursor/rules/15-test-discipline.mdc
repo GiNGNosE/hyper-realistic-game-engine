@@ -1,0 +1,22 @@
+---
+description: Require test coverage classes and minimum verification evidence
+alwaysApply: true
+---
+
+# Test Discipline
+
+## Must
+- Add or update tests for changed behavior in at least one relevant class:
+  - unit,
+  - integration,
+  - property/fuzz for parser/serialization and boundary-heavy logic,
+  - determinism replay when simulation state paths are touched.
+- Keep canonical scenario coverage aligned with `S1`, `S2`, `S3` for benchmarked paths.
+- Attach test pass/fail outputs to CI artifacts.
+
+## Must Not
+- Do not merge logic changes with no test delta and no explicit no-test justification.
+- Do not treat benchmark outputs as substitutes for unit/integration tests.
+
+## Required Evidence
+- Test matrix snippet listing updated suites and why they are sufficient.

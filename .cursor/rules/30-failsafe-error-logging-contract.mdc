@@ -1,0 +1,21 @@
+---
+description: Enforce fail-safe behavior, error taxonomy, and structured logs
+alwaysApply: true
+---
+
+# Failsafe Error Logging Contract
+
+## Must
+- Use a structured logging schema with required fields:
+  - `timestamp`, `severity`, `subsystem`, `phase`, `build_id`, `commit_id`,
+  - `snapshot_id`, `event_id`, `correlation_id`, `scenario_id`,
+  - `error_code`, `message`, `context`.
+- Keep fail-safe defaults for recoverable failures and explicit fatal handling for unrecoverable ones.
+- Include schema version in log output and migration notes when schema changes.
+
+## Must Not
+- Do not emit unstructured critical-path logs that cannot be machine-checked.
+- Do not swallow exceptions/errors in policy-governed paths.
+
+## Required Evidence
+- Log schema validation artifact and sample event trace for changed paths.

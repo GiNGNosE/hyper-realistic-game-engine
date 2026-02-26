@@ -1,0 +1,22 @@
+---
+description: Enforce baseline promotion, retention, and pruning policy with Git LFS
+alwaysApply: true
+---
+
+# Baseline and Promotion Policy
+
+## Must
+- Store baselines under:
+  - `baselines/replay/`
+  - `baselines/perf/`
+  - `baselines/metrics/`
+- Require `baseline-promotion` intent metadata on promotion PRs.
+- Require baseline index and changelog update when promotion succeeds.
+- Apply retention lifecycle: active window, archive tier, scheduled prune with integrity checks.
+
+## Must Not
+- Do not overwrite accepted baselines in place without promotion record.
+- Do not prune archive entries without prior integrity verification.
+
+## Required Evidence
+- Baseline delta report and lineage checksums for promoted artifacts.
