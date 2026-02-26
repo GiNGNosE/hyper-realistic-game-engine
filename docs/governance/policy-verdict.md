@@ -28,7 +28,8 @@ This document defines the solo automated review board.
 Lane B must run through the Lane Performance Gate (LPG) contract:
 
 - candidate metrics input in CI is downloaded runtime harness artifact `artifacts/perf/lpg-metrics.json`,
-- CI runtime benchmark production must use a direct harness command (`RUNTIME_HARNESS_CMD`); fixture/bootstrap fallback is forbidden in CI,
+- CI runtime benchmark production must use a direct harness command (`RUNTIME_HARNESS_CMD`);
+  fixture/bootstrap fallback is forbidden in CI,
 - `RUNTIME_HARNESS_CMD` must be configured as repository/org CI variable and is mandatory for `lane-runtime-benchmark`,
 - scenario set and seeds are loaded from threshold source metadata in `docs/pipeline/validation-metrics.md`,
 - metric thresholds are resolved from that same source document (no duplicated constants in scripts),
@@ -44,6 +45,17 @@ Lane B must run through the Lane Performance Gate (LPG) contract:
 - source branch taxonomy and naming validation,
 - base branch target matrix validation,
 - merge-route compliance for protected-trunk workflow.
+
+### Lane D: PR Template Governance
+
+- PR body must use one supported template marker:
+  - `feature`,
+  - `bugfix`,
+  - `governance-docs`,
+  - `baseline-promotion`.
+- Required template sections must be present and non-empty.
+- Required checklists must include explicit completion.
+- Baseline-promotion PRs must include promotion intent metadata and lineage fields.
 
 ## Threshold Source of Truth
 
@@ -76,6 +88,7 @@ Lane B must run through the Lane Performance Gate (LPG) contract:
 - `artifacts/policy/baseline-delta.json`
 - `artifacts/policy/lane-performance-risk-signals.json`
 - `artifacts/policy/lane-branch-governance.json`
+- `artifacts/policy/pr-template-validation.json`
 - `artifacts/policy/waiver-validation.json`
 - `artifacts/policy/required-rules.json`
 - `artifacts/policy/rule-read-receipt.json`
@@ -107,7 +120,8 @@ Lint behavior and suppression lifecycle are defined in `docs/governance/linting-
 
 Promotion must fail if any proof gate fails.
 
-`policy-verdict` also includes a mandatory `lane-branch-governance` lane that enforces repository branch strategy policy for pull requests.
+`policy-verdict` also includes a mandatory `lane-branch-governance` lane that enforces
+repository branch strategy policy for pull requests.
 
 ### Merge-Blocking Failure Conditions
 
@@ -118,3 +132,4 @@ Promotion must fail if any proof gate fails.
 - Ambiguity triggers detected without a valid `clarification-log.json`.
 - Clarification entries missing `user_response` or `resolved_decision`.
 - Branch naming or base-target policy violation in `lane-branch-governance`.
+- PR template marker/section/checklist validation failure in `lane-pr-template-governance`.

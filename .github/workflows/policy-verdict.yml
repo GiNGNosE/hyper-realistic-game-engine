@@ -11,6 +11,10 @@ on:
         description: "Governance phase for applicable-rule resolution"
         required: false
         default: "pre-phase-0"
+      pr_template_enforcement_mode:
+        description: "PR template validation mode: enforce or advisory"
+        required: false
+        default: "enforce"
 
 jobs:
   lane-runtime-benchmark:
@@ -56,7 +60,14 @@ jobs:
       - name: Emit environment fingerprint
         run: |
           mkdir -p artifacts/policy
-          echo "{\"env_class\":\"${POLICY_ENV_CLASS}\",\"runner\":\"${RUNNER_OS}\",\"llvm_major\":\"${LLVM_MAJOR}\",\"note\":\"lint lane fingerprint\"}" > artifacts/policy/lane-correctness-env.json
+          cat > artifacts/policy/lane-correctness-env.json <<EOF
+          {
+            "env_class": "${POLICY_ENV_CLASS}",
+            "runner": "${RUNNER_OS}",
+            "llvm_major": "${LLVM_MAJOR}",
+            "note": "lint lane fingerprint"
+          }
+          EOF
       - name: Resolve changed paths for lint scope
         run: .github/scripts/resolve-applicable-rules.sh
       - name: Install pinned lint toolchain
@@ -154,6 +165,22 @@ jobs:
           name: lane-branch-governance
           path: artifacts/policy/lane-branch-governance.json
 
+  lane-pr-template-governance:
+    name: lane-pr-template-governance
+    runs-on: ubuntu-latest
+    env:
+      PR_TEMPLATE_ENFORCEMENT_MODE: ${{ github.event.inputs.pr_template_enforcement_mode || 'enforce' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate pull request template
+        run: .github/scripts/validate-pr-template.sh
+      - name: Upload PR template governance artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lane-pr-template-governance
+          path: artifacts/policy/pr-template-validation.json
+
   policy-verdict:
     name: policy-verdict
     runs-on: ubuntu-latest
@@ -164,6 +191,7 @@ jobs:
       - lane-performance
       - proof-enforcement
       - lane-branch-governance
+      - lane-pr-template-governance
     steps:
       - name: Compute final policy verdict
         run: |
@@ -173,8 +201,14 @@ jobs:
           PERFORMANCE_STATUS="${{ needs.lane-performance.result }}"
           PROOF_STATUS="${{ needs.proof-enforcement.result }}"
           BRANCH_GOVERNANCE_STATUS="${{ needs.lane-branch-governance.result }}"
+          PR_TEMPLATE_STATUS="${{ needs.lane-pr-template-governance.result }}"
 
-          if [[ "${RUNTIME_BENCHMARK_STATUS}" == "success" && "${CORRECTNESS_STATUS}" == "success" && "${PERFORMANCE_STATUS}" == "success" && "${PROOF_STATUS}" == "success" && "${BRANCH_GOVERNANCE_STATUS}" == "success" ]]; then
+          if [[ "${RUNTIME_BENCHMARK_STATUS}" == "success" &&
+                "${CORRECTNESS_STATUS}" == "success" &&
+                "${PERFORMANCE_STATUS}" == "success" &&
+                "${PROOF_STATUS}" == "success" &&
+                "${BRANCH_GOVERNANCE_STATUS}" == "success" &&
+                "${PR_TEMPLATE_STATUS}" == "success" ]]; then
             VERDICT="pass"
           else
             VERDICT="fail"
@@ -189,7 +223,8 @@ jobs:
               "lane-correctness": "${CORRECTNESS_STATUS}",
               "lane-performance": "${PERFORMANCE_STATUS}",
               "proof-enforcement": "${PROOF_STATUS}",
-              "lane-branch-governance": "${BRANCH_GOVERNANCE_STATUS}"
+              "lane-branch-governance": "${BRANCH_GOVERNANCE_STATUS}",
+              "lane-pr-template-governance": "${PR_TEMPLATE_STATUS}"
             }
           }
           EOF

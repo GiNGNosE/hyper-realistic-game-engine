@@ -1,0 +1,36 @@
+---
+name: pr-template-enforcement
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+      - ready_for_review
+  workflow_dispatch:
+    inputs:
+      enforcement_mode:
+        description: "PR template validation mode: enforce or advisory"
+        required: false
+        default: "enforce"
+
+jobs:
+  lane-pr-template-governance:
+    name: lane-pr-template-governance
+    runs-on: ubuntu-latest
+    env:
+      PR_TEMPLATE_ENFORCEMENT_MODE: ${{ github.event.inputs.enforcement_mode || 'enforce' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate pull request template
+        run: .github/scripts/validate-pr-template.sh
+
+      - name: Upload PR template validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lane-pr-template-governance
+          path: artifacts/policy/pr-template-validation.json

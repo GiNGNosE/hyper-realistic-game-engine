@@ -32,10 +32,29 @@ Examples:
 - `release/*` -> `main`
 - `hotfix/*` -> `main` or active `release/*`
 
+## PR Template Selection Rules
+
+Use one PR template from `.github/PULL_REQUEST_TEMPLATE/` for every pull request:
+
+- `feature.md`: behavior, runtime, subsystem, or capability changes.
+- `bugfix.md`: correctness fixes with explicit root cause and regression coverage.
+- `governance-docs.md`: policy/docs/process or tooling-only governance updates.
+- `baseline-promotion.md`: baseline promotion or lineage/integrity updates.
+
+Each PR body must include a template marker comment:
+
+- `<!-- pr_template: feature -->`
+- `<!-- pr_template: bugfix -->`
+- `<!-- pr_template: governance-docs -->`
+- `<!-- pr_template: baseline-promotion -->`
+
+PRs with missing marker, missing required sections, or incomplete required checklists are merge-blocking.
+
 ## Enforcement Layers
 
 1. `policy-verdict` lane `lane-branch-governance` enforces source naming and base target matrix and emits `artifacts/policy/lane-branch-governance.json`.
-2. GitHub branch protection/ruleset on `main` enforces PR-only merge flow and requires status check `policy-verdict`.
+2. `policy-verdict` lane `lane-pr-template-governance` enforces PR template compliance and emits `artifacts/policy/pr-template-validation.json`.
+3. GitHub branch protection/ruleset on `main` enforces PR-only merge flow and requires status check `policy-verdict`.
 
 Both layers are required: CI enforces branch semantics, while platform ruleset blocks direct pushes and bypass paths.
 
