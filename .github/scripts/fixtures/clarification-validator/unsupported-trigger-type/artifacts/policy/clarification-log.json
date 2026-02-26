@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0.0",
+  "task_id": "task-edge-unsupported",
+  "commit_id": "deadbeef",
+  "ambiguities": [
+    {
+      "ambiguity_id": "A-001",
+      "trigger_type": "unknown_trigger",
+      "detected_issue": "unsupported trigger test",
+      "question_asked": "What should we do?",
+      "user_response": "Proceed with docs update.",
+      "resolved_decision": "Use scoped event logic.",
+      "resolved_at": "2026-02-27T00:00:00Z"
+    }
+  ]
+}

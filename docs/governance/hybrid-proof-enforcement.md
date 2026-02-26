@@ -57,19 +57,22 @@ CI emits `ambiguity-triggers.json` from policy checks. Initial triggers:
 
 Each trigger maps to at least one required clarification entry when active.
 
-### Event Context Mapping
+### Event-to-Trigger Scope Mapping
 
-Trigger activation is event-aware:
+`missing_target_scope` is event-scoped and only applies when changed-path scope is expected.
 
-- `pull_request`, `push` -> `missing_target_scope` can be emitted and target scope is required.
-- `workflow_dispatch`, `schedule` -> `missing_target_scope` is not emitted from target-scope absence.
+| Event | Scope expectation | `missing_target_scope` |
+| --- | --- | --- |
+| `pull_request` | Scoped | Evaluated |
+| `push` | Scoped | Evaluated |
+| `workflow_dispatch` | Unscoped | Not evaluated |
+| `schedule` | Unscoped | Not evaluated |
 
-Validation output in `artifacts/policy/clarification-validation.json` must include:
+### Compatibility Note
 
-- `event_name`
-- `target_scope_required`
-- `required_clarification`
-- `errors`
+This is a behavioral refinement only. Artifact contracts stay backward compatible with no field
+removal in `artifacts/policy/ambiguity-triggers.json` or
+`artifacts/policy/clarification-validation.json`.
 
 ## Merge-Blocking Conditions
 
@@ -104,7 +107,8 @@ The validator set was exercised with synthetic artifacts to confirm fail/pass se
 - Missing receipt produced `Rule read receipt validation failed`.
 - Wrong hash produced `rule_inventory_hash mismatch with CI-computed hash`.
 - Coverage omission produced `Receipt applied_rules missing required rules`.
-- Missing clarification log with active trigger produced `Ambiguity triggers detected but clarification-log.json is missing`.
+- Missing clarification log with active trigger produced
+  `Ambiguity triggers detected but clarification-log.json is missing`.
 - Empty clarification `user_response` produced `must be a non-empty string`.
 - Fully consistent artifact set passed all validation scripts.
 
@@ -114,10 +118,12 @@ The validator set was exercised with synthetic artifacts to confirm fail/pass se
 - Correctness lane lint outputs are mandatory evidence and are merge-blocking on failure.
 - Lint scope, suppression lifecycle, and version pinning contract are defined in `docs/governance/linting-policy.md`.
 - Branch strategy enforcement runs as an independent merge-blocking lane in `policy-verdict`.
+- Clarification event-gating semantics are protected by a dedicated deterministic CI guardrail
+  artifact at `artifacts/policy/clarification-event-gating-guardrail.json`.
 - This model does not relax any existing governance thresholds.
 - Schema versions must be incremented with compatibility notes when contracts evolve.
 
-## Compatibility Note
+## Compatibility Summary
 
 Event-aware activation for `missing_target_scope` is a behavioral refinement. It does
 not remove trigger types or remove `clarification-validation.json` contract fields.
