@@ -38,7 +38,7 @@ is_pr_context = bool(head_ref and base_ref)
 checks["pr_context_available"] = "pass" if is_pr_context else "skip"
 
 allowed_branch_pattern = re.compile(
-    r"^(feat|fix|gov|exp|release|hotfix)/[a-z0-9][a-z0-9._-]{1,62}$"
+    r"^(feat|fix|gov|chore|exp|release|hotfix)/[a-z0-9][a-z0-9._-]{1,62}$"
 )
 checks["head_branch_pattern"] = "pass"
 checks["base_branch_policy"] = "pass"
@@ -53,11 +53,11 @@ if is_pr_context:
         checks["head_branch_pattern"] = "fail"
         errors.append(
             "Head branch violates naming policy. Allowed: "
-            "feat/*, fix/*, gov/*, exp/*, release/*, hotfix/* with lowercase slug."
+            "feat/*, fix/*, gov/*, chore/*, exp/*, release/*, hotfix/* with lowercase slug."
         )
 
     allowed_base = []
-    if head_ref.startswith(("feat/", "fix/", "gov/", "exp/", "release/")):
+    if head_ref.startswith(("feat/", "fix/", "gov/", "chore/", "exp/", "release/")):
         allowed_base = ["main"]
     elif head_ref.startswith("hotfix/"):
         allowed_base = ["main"]
@@ -86,11 +86,12 @@ result = {
     "head_ref": head_ref,
     "base_ref": base_ref,
     "policy": {
-        "head_pattern": "^(feat|fix|gov|exp|release|hotfix)/[a-z0-9][a-z0-9._-]{1,62}$",
+        "head_pattern": "^(feat|fix|gov|chore|exp|release|hotfix)/[a-z0-9][a-z0-9._-]{1,62}$",
         "base_matrix": {
             "feat/*": ["main"],
             "fix/*": ["main"],
             "gov/*": ["main"],
+            "chore/*": ["main"],
             "exp/*": ["main"],
             "release/*": ["main"],
             "hotfix/*": ["main", "release/*"],

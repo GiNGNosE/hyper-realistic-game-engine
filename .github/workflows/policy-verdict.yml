@@ -11,6 +11,10 @@ on:
         description: "Governance phase for applicable-rule resolution"
         required: false
         default: "pre-phase-0"
+      pr_template_enforcement_mode:
+        description: "PR template validation mode: enforce or advisory"
+        required: false
+        default: "advisory"
 
 jobs:
   lane-runtime-benchmark:
@@ -53,10 +57,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Emit environment fingerprint
         run: |
           mkdir -p artifacts/policy
-          echo "{\"env_class\":\"${POLICY_ENV_CLASS}\",\"runner\":\"${RUNNER_OS}\",\"llvm_major\":\"${LLVM_MAJOR}\",\"note\":\"lint lane fingerprint\"}" > artifacts/policy/lane-correctness-env.json
+          cat > artifacts/policy/lane-correctness-env.json <<EOF
+          {
+            "env_class": "${POLICY_ENV_CLASS}",
+            "runner": "${RUNNER_OS}",
+            "llvm_major": "${LLVM_MAJOR}",
+            "note": "lint lane fingerprint"
+          }
+          EOF
       - name: Resolve changed paths for lint scope
         run: .github/scripts/resolve-applicable-rules.sh
       - name: Install pinned lint toolchain
@@ -89,9 +102,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: lpg-runtime-metrics
-          path: .
+          path: artifacts/perf
       - name: Verify runtime benchmark artifact path
         run: |
+          if [[ ! -f "artifacts/perf/lpg-metrics.json" && -f "artifacts/perf/artifacts/perf/lpg-metrics.json" ]]; then
+            mkdir -p artifacts/perf
+            cp "artifacts/perf/artifacts/perf/lpg-metrics.json" "artifacts/perf/lpg-metrics.json"
+          fi
           if [[ ! -f "artifacts/perf/lpg-metrics.json" ]]; then
             echo "Missing runtime benchmark artifact at artifacts/perf/lpg-metrics.json"
             echo "Ensure lane-runtime-benchmark uploaded lpg-runtime-metrics with the expected file path."
@@ -126,6 +143,8 @@ jobs:
           fetch-depth: 0
       - name: Resolve applicable rules and rule inventory hash
         run: .github/scripts/resolve-applicable-rules.sh
+      - name: Generate proof bootstrap artifacts
+        run: .github/scripts/generate-proof-artifacts.sh
       - name: Validate rule-read receipt schema and specificity
         run: .github/scripts/validate-rule-read-receipt.sh
       - name: Validate applicable-rule coverage
@@ -154,6 +173,23 @@ jobs:
           name: lane-branch-governance
           path: artifacts/policy/lane-branch-governance.json
 
+  lane-pr-template-governance:
+    name: lane-pr-template-governance
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    env:
+      PR_TEMPLATE_ENFORCEMENT_MODE: ${{ github.event.inputs.pr_template_enforcement_mode || 'advisory' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate pull request template
+        run: .github/scripts/validate-pr-template.sh
+      - name: Upload PR template governance artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lane-pr-template-governance
+          path: artifacts/policy/pr-template-validation.json
+
   policy-verdict:
     name: policy-verdict
     runs-on: ubuntu-latest
@@ -164,6 +200,7 @@ jobs:
       - lane-performance
       - proof-enforcement
       - lane-branch-governance
+      - lane-pr-template-governance
     steps:
       - name: Compute final policy verdict
         run: |
@@ -173,8 +210,27 @@ jobs:
           PERFORMANCE_STATUS="${{ needs.lane-performance.result }}"
           PROOF_STATUS="${{ needs.proof-enforcement.result }}"
           BRANCH_GOVERNANCE_STATUS="${{ needs.lane-branch-governance.result }}"
+          PR_TEMPLATE_STATUS="${{ needs.lane-pr-template-governance.result }}"
+          IS_PULL_REQUEST_EVENT="${{ github.event_name == 'pull_request' }}"
 
-          if [[ "${RUNTIME_BENCHMARK_STATUS}" == "success" && "${CORRECTNESS_STATUS}" == "success" && "${PERFORMANCE_STATUS}" == "success" && "${PROOF_STATUS}" == "success" && "${BRANCH_GOVERNANCE_STATUS}" == "success" ]]; then
+          if [[ "${IS_PULL_REQUEST_EVENT}" == "true" ]]; then
+            PR_TEMPLATE_GATE_OK="false"
+            if [[ "${PR_TEMPLATE_STATUS}" == "success" ]]; then
+              PR_TEMPLATE_GATE_OK="true"
+            fi
+          else
+            PR_TEMPLATE_GATE_OK="false"
+            if [[ "${PR_TEMPLATE_STATUS}" == "success" || "${PR_TEMPLATE_STATUS}" == "skipped" ]]; then
+              PR_TEMPLATE_GATE_OK="true"
+            fi
+          fi
+
+          if [[ "${RUNTIME_BENCHMARK_STATUS}" == "success" &&
+                "${CORRECTNESS_STATUS}" == "success" &&
+                "${PERFORMANCE_STATUS}" == "success" &&
+                "${PROOF_STATUS}" == "success" &&
+                "${BRANCH_GOVERNANCE_STATUS}" == "success" &&
+                "${PR_TEMPLATE_GATE_OK}" == "true" ]]; then
             VERDICT="pass"
           else
             VERDICT="fail"
@@ -189,7 +245,8 @@ jobs:
               "lane-correctness": "${CORRECTNESS_STATUS}",
               "lane-performance": "${PERFORMANCE_STATUS}",
               "proof-enforcement": "${PROOF_STATUS}",
-              "lane-branch-governance": "${BRANCH_GOVERNANCE_STATUS}"
+              "lane-branch-governance": "${BRANCH_GOVERNANCE_STATUS}",
+              "lane-pr-template-governance": "${PR_TEMPLATE_STATUS}"
             }
           }
           EOF
