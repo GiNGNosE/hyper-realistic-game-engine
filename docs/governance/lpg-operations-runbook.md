@@ -71,3 +71,40 @@ Maintain one entry per proof or weekly checkpoint:
 - red_risk_triggered:
 - owner_decision:
 - follow_up_actions:
+
+## Checkpoint Evidence Log
+
+### 2026-02-26 governance go-live checkpoint
+
+- run_url: https://github.com/GiNGNosE/hyper-realistic-game-engine/actions/runs/22455190697
+- run_date_utc: 2026-02-26T18:15:56Z
+- policy_phase: pre-phase-0
+- final_verdict_status: pass
+- pass_streak: 1
+- fail_streak: 0
+- runtime_median_ms_observed: 15.0
+- runtime_p95_ms_observed: 22.0
+- red_risk_triggered: false
+- owner_decision: checkpoint accepted; governance gate operational with enforced dispatch inputs.
+- follow_up_actions:
+  - keep RUNTIME_HARNESS_CMD pinned to canonical output path contract.
+  - run weekly drift review with latest LPG trend artifacts.
+
+### 2026-02-26 negative-path validation
+
+- run_url: https://github.com/GiNGNosE/hyper-realistic-game-engine/actions/runs/22455257449
+- run_date_utc: 2026-02-26T18:17:48Z
+- policy_phase: phase-2
+- final_verdict_status: fail (expected)
+- pass_streak: 0
+- fail_streak: 1 (expected-control failure)
+- runtime_median_ms_observed: n/a (runtime lane failed before artifact emission)
+- runtime_p95_ms_observed: n/a
+- red_risk_triggered: false
+- owner_decision: negative path behaved correctly; unsupported phase rejected explicitly by runtime backend.
+- follow_up_actions:
+  - retain explicit unsupported-phase failure until phase support is implemented and validated.
+
+## Next Implementation Track
+
+- phase-1 runtime expansion: extend `runtime/benchmark/main.cpp` and harness validation for `phase-1` required metrics from `docs/pipeline/validation-metrics.md` while preserving deterministic replay and runtime budgets.
