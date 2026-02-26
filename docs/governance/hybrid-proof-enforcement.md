@@ -107,7 +107,8 @@ The validator set was exercised with synthetic artifacts to confirm fail/pass se
 - Missing receipt produced `Rule read receipt validation failed`.
 - Wrong hash produced `rule_inventory_hash mismatch with CI-computed hash`.
 - Coverage omission produced `Receipt applied_rules missing required rules`.
-- Missing clarification log with active trigger produced `Ambiguity triggers detected but clarification-log.json is missing`.
+- Missing clarification log with active trigger produced
+  `Ambiguity triggers detected but clarification-log.json is missing`.
 - Empty clarification `user_response` produced `must be a non-empty string`.
 - Fully consistent artifact set passed all validation scripts.
 
