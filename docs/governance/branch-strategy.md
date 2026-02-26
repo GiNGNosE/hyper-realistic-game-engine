@@ -8,6 +8,7 @@ This repository uses a protected-trunk strategy with machine-enforced policy gat
 - `feat/*`: feature work.
 - `fix/*`: bug fixes.
 - `gov/*`: governance/process/tooling changes.
+- `chore/*`: maintenance/tooling changes without product behavior intent.
 - `exp/*`: bounded experiments.
 - `release/*`: cycle closeout/stabilization branches (short-lived).
 - `hotfix/*`: emergency fixes for `main` or an active `release/*`.
@@ -16,7 +17,7 @@ This repository uses a protected-trunk strategy with machine-enforced policy gat
 
 Pull request source branches must match:
 
-- `^(feat|fix|gov|exp|release|hotfix)/[a-z0-9][a-z0-9._-]{1,62}$`
+- `^(feat|fix|gov|chore|exp|release|hotfix)/[a-z0-9][a-z0-9._-]{1,62}$`
 
 Examples:
 
@@ -28,14 +29,34 @@ Examples:
 - `feat/*` -> `main`
 - `fix/*` -> `main`
 - `gov/*` -> `main`
+- `chore/*` -> `main`
 - `exp/*` -> `main`
 - `release/*` -> `main`
 - `hotfix/*` -> `main` or active `release/*`
 
+## PR Template Selection Rules
+
+Use one PR template from `.github/PULL_REQUEST_TEMPLATE/` for every pull request:
+
+- `feature.md`: behavior, runtime, subsystem, or capability changes.
+- `bugfix.md`: correctness fixes with explicit root cause and regression coverage.
+- `governance-docs.md`: policy/docs/process or tooling-only governance updates.
+- `baseline-promotion.md`: baseline promotion or lineage/integrity updates.
+
+Each PR body must include a template marker comment:
+
+- `<!-- pr_template: feature -->`
+- `<!-- pr_template: bugfix -->`
+- `<!-- pr_template: governance-docs -->`
+- `<!-- pr_template: baseline-promotion -->`
+
+PRs with missing marker, missing required sections, or incomplete required checklists are merge-blocking.
+
 ## Enforcement Layers
 
 1. `policy-verdict` lane `lane-branch-governance` enforces source naming and base target matrix and emits `artifacts/policy/lane-branch-governance.json`.
-2. GitHub branch protection/ruleset on `main` enforces PR-only merge flow and requires status check `policy-verdict`.
+2. `policy-verdict` lane `lane-pr-template-governance` enforces PR template compliance and emits `artifacts/policy/pr-template-validation.json`.
+3. GitHub branch protection/ruleset on `main` enforces PR-only merge flow and requires status check `policy-verdict`.
 
 Both layers are required: CI enforces branch semantics, while platform ruleset blocks direct pushes and bypass paths.
 
@@ -44,17 +65,35 @@ Both layers are required: CI enforces branch semantics, while platform ruleset b
 Configure on GitHub for `main`:
 
 - Require a pull request before merging.
+- Keep solo-mode approvals at `0` required approvals.
 - Require branches to be up to date before merging.
+- Require conversation resolution before merge.
 - Require status check `policy-verdict`.
 - Block force pushes.
 - Block deletions.
 - Restrict who can bypass protections (prefer no bypass).
+- Prefer repository merge settings with squash merge enabled and merge commits disabled for `main`.
+
+## Merge Strategy Policy
+
+- Before final merge, rebase the PR branch onto the latest `main`.
+- For PRs targeting `main`, use squash merge as the default integration method.
+- Avoid merge-commit strategy for `main` unless explicitly approved as a governance exception.
 
 Canonical desired settings are tracked in `.github/rulesets/main-protected-trunk.json`.
 
 Apply settings through:
 
 - `GITHUB_REPOSITORY=<owner/repo> .github/scripts/configure-main-branch-protection.sh`
+
+## Solo-Mode Review Rationale
+
+- This repository currently operates with a single maintainer, so required approvals are set to `0`
+  to avoid self-review deadlocks.
+- Merge safety remains enforced through required `policy-verdict` checks, up-to-date branch
+  requirement, and bypass restrictions.
+- When regular collaborators join, raise required approvals (for example to `1`) in
+  `.github/rulesets/main-protected-trunk.json` and re-apply protection.
 
 ## Rollout
 
