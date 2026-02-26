@@ -10,6 +10,7 @@ mkdir -p "${ARTIFACT_DIR}"
 "${ROOT_DIR}/.github/scripts/test-validate-clarification-log-matrix.sh"
 
 # Agent 3 verification: reviewer and delivery enforcement.
+"${ROOT_DIR}/.github/scripts/validate-agent-task-board.sh"
 "${ROOT_DIR}/.github/scripts/run-reviewer-agent.sh"
 "${ROOT_DIR}/.github/scripts/validate-agent-delivery.sh"
 
@@ -32,12 +33,14 @@ def read_json(name):
 matrix = read_json("clarification-validator-matrix.json")
 reviewer = read_json("reviewer-agent-verdict.json")
 delivery = read_json("agent-delivery-validation.json")
+task_board = read_json("agent-task-board-validation.json")
 split_plan = read_json("agent-pr-split-plan.json")
 
 checks = {
     "behavior_matrix_passed": bool(matrix and matrix.get("status") == "pass"),
     "reviewer_guardrail_passed": bool(reviewer and reviewer.get("status") == "pass"),
     "agent_delivery_guardrail_passed": bool(delivery and delivery.get("status") == "pass"),
+    "agent_task_board_guardrail_passed": bool(task_board and task_board.get("status") == "pass"),
     "pr_split_plan_ready": bool(split_plan and split_plan.get("status") == "ready"),
     "docs_synced_for_required_checks": True,
     "no_policy_verdict_contract_regression_detected": True,
@@ -53,6 +56,7 @@ payload = {
         "matrix_summary": "artifacts/policy/clarification-validator-matrix-summary.md",
         "reviewer_verdict": "artifacts/policy/reviewer-agent-verdict.json",
         "delivery_verdict": "artifacts/policy/agent-delivery-validation.json",
+        "task_board_verdict": "artifacts/policy/agent-task-board-validation.json",
         "pr_split_plan": "artifacts/policy/agent-pr-split-plan.json",
     },
 }
@@ -81,6 +85,7 @@ lines.extend(
         "- `artifacts/policy/clarification-validator-matrix-summary.md`",
         "- `artifacts/policy/reviewer-agent-verdict.json`",
         "- `artifacts/policy/agent-delivery-validation.json`",
+        "- `artifacts/policy/agent-task-board-validation.json`",
         "- `artifacts/policy/agent-pr-split-plan.json`",
     ]
 )

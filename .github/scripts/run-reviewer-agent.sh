@@ -7,6 +7,7 @@ python3 - <<'PY'
 import json
 import os
 import pathlib
+import re
 import subprocess
 import sys
 
@@ -66,6 +67,17 @@ if isinstance(event, dict) and isinstance(event.get("pull_request"), dict):
 
 changed_paths = run_git_diff(base_sha, head_sha) if base_sha and head_sha else local_changed_paths()
 
+board_path = pathlib.Path("docs/governance/agent-task-board.md")
+board_tasks = {}
+if board_path.exists():
+    board_text = board_path.read_text(encoding="utf-8")
+    blocks = re.split(r"(?m)^### Task\s*$", board_text)
+    for block in blocks[1:]:
+        task_id_match = re.search(r"(?m)^TaskID:\s*(\S+)\s*$", block)
+        owner_match = re.search(r"(?m)^OwnerAgent:\s*(\S+)\s*$", block)
+        if task_id_match and owner_match:
+            board_tasks[task_id_match.group(1)] = owner_match.group(1).lower()
+
 findings = []
 warnings = []
 checks = {
@@ -73,6 +85,7 @@ checks = {
     "clarification_validator_has_matrix_guard": "pass",
     "policy_verdict_workflow_has_docs_alignment": "pass",
     "findings_owner_assignment": "pass",
+    "findings_task_board_mapping": "pass",
 }
 
 
@@ -81,6 +94,7 @@ def add_finding(
     severity: str,
     issue: str,
     owner_agent: str,
+    task_id: str = "",
     file_hints=None,
 ):
     findings.append(
@@ -89,6 +103,7 @@ def add_finding(
             "severity": severity,
             "issue": issue,
             "owner_agent": owner_agent,
+            "task_id": task_id,
             "file_hints": file_hints or [],
             "status": "open",
         }
@@ -106,6 +121,7 @@ if clarification_validator_changed and not clarification_matrix_harness_changed:
         severity="blocker",
         issue="validate-clarification-log.sh changed without updating test-validate-clarification-log-matrix.sh",
         owner_agent="agent1",
+        task_id="TB-001",
         file_hints=[
             ".github/scripts/validate-clarification-log.sh",
             ".github/scripts/test-validate-clarification-log-matrix.sh",
@@ -128,6 +144,7 @@ if policy_workflow_changed and not docs_changed:
         severity="major",
         issue="policy-verdict workflow changed without companion governance doc update",
         owner_agent="agent3",
+        task_id="TB-003",
         file_hints=[
             ".github/workflows/policy-verdict.yml",
             "docs/governance/policy-verdict.md",
@@ -151,8 +168,28 @@ unassigned_findings = [
 if unassigned_findings:
     checks["findings_owner_assignment"] = "fail"
 
-status = "fail" if findings or unassigned_findings else "pass"
-risk_level = "high" if findings or unassigned_findings else ("medium" if warnings else "low")
+task_mismatches = []
+for finding in findings:
+    task_id = str(finding.get("task_id", "")).strip()
+    if not task_id:
+        continue
+    expected_owner = board_tasks.get(task_id, "")
+    if not expected_owner:
+        task_mismatches.append(
+            f"{finding.get('finding_id')} references unknown task_id {task_id}"
+        )
+        continue
+    if expected_owner != finding.get("owner_agent"):
+        task_mismatches.append(
+            f"{finding.get('finding_id')} owner mismatch: task {task_id} belongs to {expected_owner}"
+        )
+if task_mismatches:
+    checks["findings_task_board_mapping"] = "fail"
+
+status = "fail" if findings or unassigned_findings or task_mismatches else "pass"
+risk_level = (
+    "high" if findings or unassigned_findings or task_mismatches else ("medium" if warnings else "low")
+)
 
 payload = {
     "status": status,
@@ -161,6 +198,7 @@ payload = {
     "checks": checks,
     "findings": findings,
     "unassigned_findings": unassigned_findings,
+    "task_mapping_errors": task_mismatches,
     "warnings": warnings,
     "changed_file_count": len(changed_paths),
     "changed_paths": changed_paths,
@@ -170,7 +208,7 @@ output_path = pathlib.Path("artifacts/policy/reviewer-agent-verdict.json")
 output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 print(f"Wrote {output_path}")
-if findings or unassigned_findings:
+if findings or unassigned_findings or task_mismatches:
     print("Reviewer-agent checks failed:")
     for finding in findings:
         print(
@@ -188,5 +226,7 @@ if findings or unassigned_findings:
                 owner=finding.get("owner_agent", ""),
             )
         )
+    for item in task_mismatches:
+        print(f"- {item}")
     sys.exit(1)
 PY

@@ -19,6 +19,22 @@ event = {}
 if event_path and pathlib.Path(event_path).exists():
     event = json.loads(pathlib.Path(event_path).read_text(encoding="utf-8"))
 
+board_path = pathlib.Path("docs/governance/agent-task-board.md")
+board_version = ""
+board_tasks = {}
+if board_path.exists():
+    board_content = board_path.read_text(encoding="utf-8")
+    version_match = re.search(r"(?m)^BoardVersion:\s*(\S+)\s*$", board_content)
+    board_version = version_match.group(1) if version_match else ""
+    task_blocks = re.split(r"(?m)^### Task\s*$", board_content)
+    for block in task_blocks[1:]:
+        task_id_match = re.search(r"(?m)^TaskID:\s*(\S+)\s*$", block)
+        owner_match = re.search(r"(?m)^OwnerAgent:\s*(\S+)\s*$", block)
+        if task_id_match and owner_match:
+            board_tasks[task_id_match.group(1)] = owner_match.group(1).lower()
+else:
+    board_content = ""
+
 pr = event.get("pull_request", {}) if isinstance(event, dict) else {}
 title = str(pr.get("title", "")).strip()
 body = str(pr.get("body", "") or "").strip()
@@ -29,6 +45,9 @@ is_pr_context = isinstance(pr, dict) and bool(pr)
 checks = {
     "pr_title_agent_prefix": "pass",
     "pr_body_owner_agent": "pass",
+    "pr_body_task_board_version": "pass",
+    "pr_body_task_id": "pass",
+    "task_board_lookup_match": "pass",
     "commit_subject_agent_prefix": "pass",
 }
 errors = []
@@ -45,9 +64,45 @@ if is_pr_context and not owner_agent:
     checks["pr_body_owner_agent"] = "fail"
     errors.append("PR body must contain 'OwnerAgent: agent1|agent2|agent3'")
 
+task_board_version_match = re.search(r"(?im)^TaskBoardVersion:\s*(\S+)\s*$", body)
+task_board_version = task_board_version_match.group(1) if task_board_version_match else ""
+if is_pr_context and not task_board_version:
+    checks["pr_body_task_board_version"] = "fail"
+    errors.append("PR body must contain 'TaskBoardVersion: <value>'")
+
+task_id_match = re.search(r"(?im)^TaskID:\s*(\S+)\s*$", body)
+task_id = task_id_match.group(1) if task_id_match else ""
+if is_pr_context and not task_id:
+    checks["pr_body_task_id"] = "fail"
+    errors.append("PR body must contain 'TaskID: <value>'")
+
 if is_pr_context and owner_agent and title_agent and owner_agent != title_agent:
     checks["pr_body_owner_agent"] = "fail"
     errors.append("OwnerAgent in PR body must match PR title agent prefix")
+
+if is_pr_context:
+    if not board_content:
+        checks["task_board_lookup_match"] = "fail"
+        errors.append("Missing docs/governance/agent-task-board.md for delivery contract lookup")
+    else:
+        if not board_version:
+            checks["task_board_lookup_match"] = "fail"
+            errors.append("Task board missing BoardVersion header")
+        if task_board_version and board_version and task_board_version != board_version:
+            checks["task_board_lookup_match"] = "fail"
+            errors.append(
+                f"TaskBoardVersion mismatch: PR={task_board_version} board={board_version}"
+            )
+        if task_id:
+            expected_owner = board_tasks.get(task_id, "")
+            if not expected_owner:
+                checks["task_board_lookup_match"] = "fail"
+                errors.append(f"TaskID not found in task board: {task_id}")
+            elif owner_agent and expected_owner != owner_agent:
+                checks["task_board_lookup_match"] = "fail"
+                errors.append(
+                    f"TaskID owner mismatch: TaskID {task_id} belongs to {expected_owner}, PR declares {owner_agent}"
+                )
 
 commit_subjects = []
 if is_pr_context and base_sha and head_sha:
@@ -81,6 +136,9 @@ elif is_pr_context:
 else:
     checks["pr_title_agent_prefix"] = "skip"
     checks["pr_body_owner_agent"] = "skip"
+    checks["pr_body_task_board_version"] = "skip"
+    checks["pr_body_task_id"] = "skip"
+    checks["task_board_lookup_match"] = "skip"
     checks["commit_subject_agent_prefix"] = "skip"
 
 status = "pass" if not errors else "fail"
@@ -88,6 +146,9 @@ payload = {
     "status": status,
     "event_name": event_name,
     "owner_agent": owner_agent if owner_agent in allowed_agents else "",
+    "task_board_version": task_board_version,
+    "task_id": task_id,
+    "board_version": board_version,
     "checks": checks,
     "commit_count": len(commit_subjects),
     "commit_subjects": commit_subjects,
@@ -104,3 +165,4 @@ if errors:
         print(f"- {err}")
     sys.exit(1)
 PY
+
