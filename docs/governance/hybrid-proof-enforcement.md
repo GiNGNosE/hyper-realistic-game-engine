@@ -122,7 +122,7 @@ The validator set was exercised with synthetic artifacts to confirm fail/pass se
 - This model does not relax any existing governance thresholds.
 - Schema versions must be incremented with compatibility notes when contracts evolve.
 
-## Compatibility Note
+## Compatibility Summary
 
 Event-aware activation for `missing_target_scope` is a behavioral refinement. It does
 not remove trigger types or remove `clarification-validation.json` contract fields.
