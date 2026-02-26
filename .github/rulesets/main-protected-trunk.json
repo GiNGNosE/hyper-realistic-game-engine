@@ -8,7 +8,9 @@
   "require_up_to_date_branch": true,
   "required_conversation_resolution": true,
   "required_status_checks": [
-    "policy-verdict"
+    "policy-verdict",
+    "reviewer-agent",
+    "agent-delivery"
   ],
   "allow_force_pushes": false,
   "allow_deletions": false,

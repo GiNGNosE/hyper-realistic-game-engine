@@ -1,11 +1,12 @@
 # Policy Verdict Contract
 
-This document defines the solo automated review board.
+This document defines the automated review board and merge authority contract.
 
 ## Final Authority
 
-- CI job `policy-verdict` is the sole promotion authority.
-- No human reviewer is required for pass/fail decisions.
+- CI job `policy-verdict` is the primary merge gate for lane and proof enforcement.
+- Independent status check `reviewer-agent` is required for change-risk review.
+- Independent status check `agent-delivery` is required to enforce agent ownership and submission metadata.
 - Any failing mandatory gate blocks promotion.
 
 ## Required CI Lanes
@@ -45,6 +46,18 @@ Lane B must run through the Lane Performance Gate (LPG) contract:
 - source branch taxonomy and naming validation,
 - base branch target matrix validation,
 - merge-route compliance for protected-trunk workflow.
+
+### Independent Reviewer-Agent Gate
+
+- CI job `reviewer-agent` performs deterministic risk checks on pull requests.
+- `reviewer-agent` emits `artifacts/policy/reviewer-agent-verdict.json`.
+- `reviewer-agent` must pass as a required status check alongside `policy-verdict`.
+
+### Independent Agent-Delivery Gate
+
+- CI job `agent-delivery` validates agent ownership metadata for pull requests.
+- `agent-delivery` emits `artifacts/policy/agent-delivery-validation.json`.
+- `agent-delivery` must pass as a required status check alongside `policy-verdict` and `reviewer-agent`.
 
 ### Lane D: PR Template Governance
 
@@ -99,6 +112,8 @@ Lane B must run through the Lane Performance Gate (LPG) contract:
 - `artifacts/policy/clarification-event-gating-guardrail.json`
 - `artifacts/policy/proof-integrity-validation.json`
 - `artifacts/policy/final-verdict.json`
+- `artifacts/policy/reviewer-agent-verdict.json`
+- `artifacts/policy/agent-delivery-validation.json`
 
 Lint behavior and suppression lifecycle are defined in `docs/governance/linting-policy.md`.
 

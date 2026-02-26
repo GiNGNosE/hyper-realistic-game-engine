@@ -1,0 +1,23 @@
+name: reviewer-agent
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  reviewer-agent:
+    name: reviewer-agent
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run reviewer-agent guardrail checks
+        run: .github/scripts/run-reviewer-agent.sh
+      - name: Upload reviewer-agent artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reviewer-agent
+          path: artifacts/policy/reviewer-agent-verdict.json
