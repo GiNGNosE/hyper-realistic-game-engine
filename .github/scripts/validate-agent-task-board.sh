@@ -179,10 +179,10 @@ if invalid_status:
     errors.append("Invalid Status for task(s): " + ", ".join(invalid_status))
 
 done_tasks = [t["task_id"] for t in tasks if t["status"] == "done"]
-soft_archive_note = (
-    "Soft-archive lifecycle applies: completed tasks remain on the board with `Status: done` until the orchestrator removes them after merge."
+soft_archive_pattern = re.compile(
+    r"(?is)Soft-archive lifecycle applies:.*?Status:\s*done.*?orchestrator.*?after merge"
 )
-if done_tasks and soft_archive_note not in content:
+if done_tasks and not soft_archive_pattern.search(content):
     checks["completion_lifecycle_policy_valid"] = "fail"
     errors.append(
         "Done tasks require soft-archive dispatch note explaining orchestrator removal after merge"

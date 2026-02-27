@@ -1,0 +1,53 @@
+{
+  "event_name": "workflow_dispatch",
+  "inputs": {
+    "artifacts/policy/acceptance-criteria.json": {
+      "json": {
+        "present": true
+      }
+    },
+    "artifacts/policy/governance-conflicts.json": {
+      "json": {
+        "active_conflicts": 0
+      }
+    },
+    "artifacts/policy/implementation-options.json": {
+      "json": {
+        "candidates": [
+          "single"
+        ],
+        "selected_option": "single"
+      }
+    },
+    "artifacts/policy/required-rules.json": {
+      "json": {
+        "changed_paths": []
+      }
+    },
+    "artifacts/policy/rule-read-receipt.json": {
+      "json": {
+        "changed_paths": []
+      }
+    }
+  },
+  "post_validator_overrides": {
+    "artifacts/policy/clarification-validation.json": {
+      "delete": true
+    }
+  },
+  "expect": {
+    "exit_code": 0,
+    "guardrail_contains_error_codes": [
+      "missing_artifact"
+    ],
+    "guardrail_contains_messages": [
+      "clarification_validation artifact is missing"
+    ],
+    "guardrail_scenario_error_count": 1,
+    "guardrail_status": "fail",
+    "required_clarification": false,
+    "target_scope_required": false,
+    "validation_artifact_present": false
+  },
+  "scenario_id": "queued-unscoped-guardrail-missing-validation-artifact"
+}

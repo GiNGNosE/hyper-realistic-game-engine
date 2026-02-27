@@ -1,0 +1,52 @@
+{
+  "event_name": "push",
+  "inputs": {
+    "artifacts/policy/acceptance-criteria.json": {
+      "json": {
+        "present": true
+      }
+    },
+    "artifacts/policy/governance-conflicts.json": {
+      "json": {
+        "active_conflicts": 0
+      }
+    },
+    "artifacts/policy/implementation-options.json": {
+      "json": {
+        "candidates": [
+          "option-a",
+          "option-b"
+        ],
+        "selected_option": ""
+      }
+    },
+    "artifacts/policy/required-rules.json": {
+      "json": {
+        "changed_paths": [
+          "docs/governance/policy-verdict.md"
+        ]
+      }
+    },
+    "artifacts/policy/rule-read-receipt.json": {
+      "json": {
+        "changed_paths": [
+          "docs/governance/policy-verdict.md"
+        ]
+      }
+    }
+  },
+  "expect": {
+    "contains_errors": [
+      "Ambiguity triggers detected but clarification-log.json is missing"
+    ],
+    "contains_trigger_types": [
+      "multiple_valid_implementations"
+    ],
+    "exit_code": 1,
+    "required_clarification": true,
+    "status": "fail",
+    "target_scope_required": true,
+    "validation_artifact_present": true
+  },
+  "scenario_id": "queued-scoped-multiple-options-no-selection"
+}

@@ -68,6 +68,8 @@ Lane B must run through the Lane Performance Gate (LPG) contract:
 - Any board schema/hash mismatch is merge-blocking.
 - Completion lifecycle is soft-archive: tasks may remain with `Status: done` until orchestrator cleanup after merge.
 - `agent-delivery` must reject PR metadata that references a `cancelled` task.
+- Active-vs-queued board sections are part of the validated contract: `ActiveTasks` are executable in the
+  current wave, while `QueuedTasks` are pre-assigned and promoted by orchestrator after active stabilization.
 
 ## Threshold Source of Truth
 
@@ -112,8 +114,23 @@ Lane B must run through the Lane Performance Gate (LPG) contract:
 - `artifacts/policy/reviewer-agent-verdict.json`
 - `artifacts/policy/agent-delivery-validation.json`
 - `artifacts/policy/agent-task-board-validation.json`
+- `artifacts/cycle-evidence/cycle-evidence-summary.json`
+- `artifacts/cycle-evidence/cycle-evidence-summary.md`
+- `artifacts/cycle-evidence/evidence-index.json`
 
 Lint behavior and suppression lifecycle are defined in `docs/governance/linting-policy.md`.
+
+## Cycle Closeout Evidence Bundle
+
+`policy-verdict` includes mandatory job `cycle-closeout-evidence` that composes cycle-closeout
+evidence from lane artifacts.
+
+- Inputs include runtime benchmark metrics, LPG threshold pass/fail output, baseline delta/integrity,
+  and ADR index linkage.
+- The bundle must report dual-objective status explicitly:
+  - quality/determinism objective,
+  - runtime performance objective.
+- Missing mandatory inputs or non-pass objective status is merge-blocking.
 
 ## Waiver Enforcement
 
@@ -138,6 +155,8 @@ Lint behavior and suppression lifecycle are defined in `docs/governance/linting-
 - inactive for `workflow_dispatch` and `schedule`.
 
 This is a behavioral refinement of trigger conditions; it does not remove required artifact fields.
+It also does not remove required PR delivery metadata keys (`TaskBoardVersion`, `TaskID`,
+`OwnerAgent`).
 
 Promotion must fail if any proof gate fails.
 

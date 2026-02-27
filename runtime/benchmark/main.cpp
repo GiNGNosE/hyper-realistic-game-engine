@@ -2,6 +2,8 @@
 #include <fstream>
 #include <iostream>
 #include <optional>
+#include <sstream>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -10,6 +12,19 @@ namespace {
 
 constexpr std::string_view kSupportedPhase = "pre-phase-0";
 constexpr std::string_view kSupportedScenarioSet = "canonical-s1-s3";
+constexpr int kExitCodeCreateOutputDirectoryFailed = 5;
+constexpr int kExitCodeOpenOutputFileFailed = 6;
+constexpr int kExitCodeWriteOutputPayloadFailed = 7;
+
+constexpr int kScenarioSeedS1 = 101;
+constexpr int kScenarioSeedS2 = 202;
+constexpr int kScenarioSeedS3 = 303;
+constexpr double kScenarioRuntimeMedianS1 = 13.0;
+constexpr double kScenarioRuntimeMedianS2 = 15.0;
+constexpr double kScenarioRuntimeMedianS3 = 17.0;
+constexpr double kScenarioRuntimeP95S1 = 19.0;
+constexpr double kScenarioRuntimeP95S2 = 22.0;
+constexpr double kScenarioRuntimeP95S3 = 25.0;
 
 struct ScenarioMetrics {
   std::string id;
@@ -25,37 +40,37 @@ struct Config {
   std::filesystem::path output_path;
 };
 
-void PrintUsage() {
-  std::cerr
-      << "Usage: lpg-runtime-benchmark --phase <phase> --scenario-set <id> "
-      << "--output <path>\n";
+auto PrintUsage() -> void {
+  std::cerr << "Usage: lpg-runtime-benchmark --phase <phase> --scenario-set <id> "
+            << "--output <path>\n";
 }
 
-bool ParseArgs(int argc, char** argv, Config& cfg, std::string& error) {
-  for (int i = 1; i < argc; ++i) {
-    const std::string arg = argv[i];
+auto ParseArgs(int argc, char** argv, Config& cfg, std::string& error) -> bool {
+  const auto argv_span = std::span<char*>(argv, static_cast<std::size_t>(argc));
+  for (std::size_t i = 1; i < argv_span.size(); ++i) {
+    const std::string arg = argv_span[i];
     if (arg == "--phase") {
-      if (i + 1 >= argc) {
+      if (i + 1 >= argv_span.size()) {
         error = "Missing value for --phase";
         return false;
       }
-      cfg.phase = argv[++i];
+      cfg.phase = argv_span[++i];
       continue;
     }
     if (arg == "--scenario-set") {
-      if (i + 1 >= argc) {
+      if (i + 1 >= argv_span.size()) {
         error = "Missing value for --scenario-set";
         return false;
       }
-      cfg.scenario_set = argv[++i];
+      cfg.scenario_set = argv_span[++i];
       continue;
     }
     if (arg == "--output") {
-      if (i + 1 >= argc) {
+      if (i + 1 >= argv_span.size()) {
         error = "Missing value for --output";
         return false;
       }
-      cfg.output_path = argv[++i];
+      cfg.output_path = argv_span[++i];
       continue;
     }
     if (arg == "--help" || arg == "-h") {
@@ -83,35 +98,35 @@ bool ParseArgs(int argc, char** argv, Config& cfg, std::string& error) {
   return true;
 }
 
-std::string JsonEscape(const std::string& value) {
+auto JsonEscape(const std::string& value) -> std::string {
   std::string out;
   out.reserve(value.size());
-  for (const char c : value) {
-    switch (c) {
-      case '\\':
-        out += "\\\\";
-        break;
-      case '\"':
-        out += "\\\"";
-        break;
-      case '\n':
-        out += "\\n";
-        break;
-      case '\r':
-        out += "\\r";
-        break;
-      case '\t':
-        out += "\\t";
-        break;
-      default:
-        out.push_back(c);
-        break;
+  for (const char ch : value) {
+    switch (ch) {
+    case '\\':
+      out += "\\\\";
+      break;
+    case '\"':
+      out += "\\\"";
+      break;
+    case '\n':
+      out += "\\n";
+      break;
+    case '\r':
+      out += "\\r";
+      break;
+    case '\t':
+      out += "\\t";
+      break;
+    default:
+      out.push_back(ch);
+      break;
     }
   }
   return out;
 }
 
-std::string DetectRuntimeSignature() {
+auto DetectRuntimeSignature() -> std::string {
 #if defined(__APPLE__)
   return "darwin-runtime";
 #elif defined(__linux__)
@@ -123,7 +138,7 @@ std::string DetectRuntimeSignature() {
 #endif
 }
 
-std::string DetectCpuClass() {
+auto DetectCpuClass() -> std::string {
 #if defined(__x86_64__) || defined(_M_X64)
   return "x86_64-standard";
 #elif defined(__aarch64__) || defined(_M_ARM64)
@@ -133,15 +148,15 @@ std::string DetectCpuClass() {
 #endif
 }
 
-std::vector<ScenarioMetrics> CanonicalResults() {
+auto CanonicalResults() -> std::vector<ScenarioMetrics> {
   return {
-      {"S1_LightTap", 101, 100.0, 13.0, 19.0},
-      {"S2_ChiselImpact", 202, 100.0, 15.0, 22.0},
-      {"S3_HeavyDrop", 303, 100.0, 17.0, 25.0},
+      {"S1_LightTap", kScenarioSeedS1, 100.0, kScenarioRuntimeMedianS1, kScenarioRuntimeP95S1},
+      {"S2_ChiselImpact", kScenarioSeedS2, 100.0, kScenarioRuntimeMedianS2, kScenarioRuntimeP95S2},
+      {"S3_HeavyDrop", kScenarioSeedS3, 100.0, kScenarioRuntimeMedianS3, kScenarioRuntimeP95S3},
   };
 }
 
-std::optional<std::string> BuildPayload(const Config& cfg) {
+auto BuildPayload(const Config& cfg) -> std::optional<std::string> {
   if (cfg.phase != kSupportedPhase) {
     return std::nullopt;
   }
@@ -163,50 +178,50 @@ std::optional<std::string> BuildPayload(const Config& cfg) {
   const std::string build_flags = "unknown-build-type";
 #endif
 
-  std::string json;
-  json += "{\n";
-  json += "  \"schema_version\": \"lpg-metrics-v1\",\n";
-  json += "  \"phase\": \"" + JsonEscape(cfg.phase) + "\",\n";
-  json += "  \"scenario_set_id\": \"" + JsonEscape(cfg.scenario_set) + "\",\n";
-  json += "  \"aggregate_metrics\": {\n";
-  json += "    \"D1_ReplayHashMatchRate\": " + std::to_string(aggregate_d1) + ",\n";
-  json += "    \"runtime_median_ms\": " + std::to_string(aggregate_runtime_median_ms) + ",\n";
-  json += "    \"runtime_p95_ms\": " + std::to_string(aggregate_runtime_p95_ms) + "\n";
-  json += "  },\n";
-  json += "  \"scenario_runs\": [\n";
+  std::ostringstream json;
+  json << "{\n";
+  json << "  \"schema_version\": \"lpg-metrics-v1\",\n";
+  json << R"(  "phase": ")" << JsonEscape(cfg.phase) << "\",\n";
+  json << R"(  "scenario_set_id": ")" << JsonEscape(cfg.scenario_set) << "\",\n";
+  json << "  \"aggregate_metrics\": {\n";
+  json << "    \"D1_ReplayHashMatchRate\": " << aggregate_d1 << ",\n";
+  json << "    \"runtime_median_ms\": " << aggregate_runtime_median_ms << ",\n";
+  json << "    \"runtime_p95_ms\": " << aggregate_runtime_p95_ms << "\n";
+  json << "  },\n";
+  json << "  \"scenario_runs\": [\n";
   for (std::size_t idx = 0; idx < scenarios.size(); ++idx) {
     const auto& scenario = scenarios[idx];
-    json += "    {\n";
-    json += "      \"scenario_id\": \"" + JsonEscape(scenario.id) + "\",\n";
-    json += "      \"seed\": " + std::to_string(scenario.seed) + ",\n";
-    json += "      \"metrics\": {\n";
-    json += "        \"D1_ReplayHashMatchRate\": " + std::to_string(scenario.replay_hash_match_rate) + ",\n";
-    json += "        \"runtime_median_ms\": " + std::to_string(scenario.runtime_median_ms) + ",\n";
-    json += "        \"runtime_p95_ms\": " + std::to_string(scenario.runtime_p95_ms) + "\n";
-    json += "      }\n";
-    json += "    }";
+    json << "    {\n";
+    json << R"(      "scenario_id": ")" << JsonEscape(scenario.id) << "\",\n";
+    json << "      \"seed\": " << scenario.seed << ",\n";
+    json << "      \"metrics\": {\n";
+    json << "        \"D1_ReplayHashMatchRate\": " << scenario.replay_hash_match_rate << ",\n";
+    json << "        \"runtime_median_ms\": " << scenario.runtime_median_ms << ",\n";
+    json << "        \"runtime_p95_ms\": " << scenario.runtime_p95_ms << "\n";
+    json << "      }\n";
+    json << "    }";
     if (idx + 1 < scenarios.size()) {
-      json += ",";
+      json << ",";
     }
-    json += "\n";
+    json << "\n";
   }
-  json += "  ],\n";
-  json += "  \"environment_fingerprint\": {\n";
-  json += "    \"compiler_toolchain_id\": \"cpp-runtime-benchmark-v1\",\n";
-  json += "    \"os_runtime_signature\": \"" + JsonEscape(os_runtime_signature) + "\",\n";
-  json += "    \"cpu_class\": \"" + JsonEscape(cpu_class) + "\",\n";
-  json += "    \"gpu_class\": \"n/a-cpu-runtime-backend\",\n";
-  json += "    \"key_build_flags\": \"" + JsonEscape(build_flags) + "\",\n";
-  json += "    \"perf_profile_id\": \"lpg-runtime-benchmark-bootstrap-v1\"\n";
-  json += "  }\n";
-  json += "}\n";
+  json << "  ],\n";
+  json << "  \"environment_fingerprint\": {\n";
+  json << "    \"compiler_toolchain_id\": \"cpp-runtime-benchmark-v1\",\n";
+  json << R"(    "os_runtime_signature": ")" << JsonEscape(os_runtime_signature) << "\",\n";
+  json << R"(    "cpu_class": ")" << JsonEscape(cpu_class) << "\",\n";
+  json << "    \"gpu_class\": \"n/a-cpu-runtime-backend\",\n";
+  json << R"(    "key_build_flags": ")" << JsonEscape(build_flags) << "\",\n";
+  json << "    \"perf_profile_id\": \"lpg-runtime-benchmark-bootstrap-v1\"\n";
+  json << "  }\n";
+  json << "}\n";
 
-  return json;
+  return json.str();
 }
 
-}  // namespace
+} // namespace
 
-int main(int argc, char** argv) {
+auto main(int argc, char** argv) -> int {
   Config cfg;
   std::string error;
   if (!ParseArgs(argc, argv, cfg, error)) {
@@ -221,7 +236,8 @@ int main(int argc, char** argv) {
     return 3;
   }
   if (cfg.scenario_set != kSupportedScenarioSet) {
-    std::cerr << "Unsupported scenario set for runtime benchmark backend: " << cfg.scenario_set << "\n";
+    std::cerr << "Unsupported scenario set for runtime benchmark backend: " << cfg.scenario_set
+              << "\n";
     std::cerr << "Supported scenario set is currently: " << kSupportedScenarioSet << "\n";
     return 3;
   }
@@ -232,24 +248,28 @@ int main(int argc, char** argv) {
     return 4;
   }
 
-  std::error_code mkdir_ec;
-  std::filesystem::create_directories(cfg.output_path.parent_path(), mkdir_ec);
-  if (mkdir_ec) {
-    std::cerr << "Failed to create output directory: " << mkdir_ec.message() << "\n";
-    return 5;
+  const std::filesystem::path output_parent = cfg.output_path.parent_path();
+  if (!output_parent.empty()) {
+    std::error_code mkdir_ec;
+    std::filesystem::create_directories(output_parent, mkdir_ec);
+    if (mkdir_ec) {
+      std::cerr << "Failed to create output directory '" << output_parent.string()
+                << "': " << mkdir_ec.message() << "\n";
+      return kExitCodeCreateOutputDirectoryFailed;
+    }
   }
 
   std::ofstream out(cfg.output_path, std::ios::out | std::ios::trunc);
   if (!out) {
     std::cerr << "Failed to open output file: " << cfg.output_path << "\n";
-    return 6;
+    return kExitCodeOpenOutputFileFailed;
   }
 
   out << *payload;
   out.flush();
   if (!out) {
     std::cerr << "Failed to write output payload: " << cfg.output_path << "\n";
-    return 7;
+    return kExitCodeWriteOutputPayloadFailed;
   }
 
   std::cout << "Wrote runtime benchmark payload to " << cfg.output_path << "\n";

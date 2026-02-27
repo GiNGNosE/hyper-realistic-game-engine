@@ -52,7 +52,7 @@ CI validates:
 
 - marker exists and is one of supported template types,
 - required sections exist and are non-empty,
-- required checklist sections include explicit completion,
+- required checklist sections include checklist items and all required checkboxes are checked,
 - placeholder content (`TODO`, `TBD`) is not left in required sections,
 - baseline promotion metadata fields are present for `baseline-promotion`.
 
@@ -66,7 +66,7 @@ Common merge-blocking failures:
 
 - missing marker comment in PR body,
 - missing required section such as `Dual-Objective Evidence`,
-- required checklists left entirely unchecked,
+- required checklist sections with any unchecked item in required checklists,
 - baseline promotion PR without `intent: baseline-promotion` metadata.
 
 ## Remediation

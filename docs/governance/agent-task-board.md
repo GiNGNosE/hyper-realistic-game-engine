@@ -2,15 +2,15 @@
 
 <!-- markdownlint-disable MD022 MD024 -->
 
-BoardVersion: 2026-02-27.3
-BoardHash: f8bd1154ea09102e392f0dc46dc82cb754348872edd1e58d60f709bd15d0060f
+BoardVersion: 2026-02-27.4
+BoardHash: 50c1882e820800587a564e0493307051130eee647eebf90b4375b66db82c64e1
 ## ActiveTasks
 
 ### Task
 
 TaskID: TB-005
 OwnerAgent: agent1
-Status: assigned
+Status: done
 ScopePaths:
 
 - `.github/scripts/validate-clarification-log.sh`
@@ -34,7 +34,7 @@ EvidenceArtifacts:
 
 TaskID: TB-006
 OwnerAgent: agent2
-Status: assigned
+Status: done
 ScopePaths:
 
 - `docs/governance/clarification-log-schema.md`
@@ -61,7 +61,7 @@ EvidenceArtifacts:
 
 TaskID: TB-007
 OwnerAgent: agent3
-Status: assigned
+Status: done
 ScopePaths:
 
 - `.github/workflows/agent-delivery.yml`
@@ -92,7 +92,7 @@ EvidenceArtifacts:
 
 TaskID: TB-008
 OwnerAgent: agent1
-Status: assigned
+Status: done
 ScopePaths:
 
 - `.github/scripts/validate-clarification-log.sh`
@@ -119,7 +119,7 @@ EvidenceArtifacts:
 
 TaskID: TB-009
 OwnerAgent: agent2
-Status: assigned
+Status: done
 ScopePaths:
 
 - `docs/governance/clarification-log-schema.md`
@@ -148,7 +148,7 @@ EvidenceArtifacts:
 
 TaskID: TB-010
 OwnerAgent: agent3
-Status: assigned
+Status: done
 ScopePaths:
 
 - `.github/workflows/agent-delivery.yml`
@@ -178,7 +178,7 @@ EvidenceArtifacts:
 
 TaskID: TB-011
 OwnerAgent: agent1
-Status: assigned
+Status: done
 ScopePaths:
 
 - `runtime/benchmark/main.cpp`
@@ -200,32 +200,9 @@ EvidenceArtifacts:
 
 ### Task
 
-TaskID: TB-012
-OwnerAgent: agent3
-Status: assigned
-ScopePaths:
-
-- `.github/scripts/review-lpg-artifacts.py`
-- `.github/workflows/policy-verdict.yml`
-
-Acceptance:
-
-- Artifact review script does not crash on malformed streak values
-  (for example `"N/A"`, empty string, or null).
-- Script emits a structured failure artifact with actionable error details
-  when streak fields are invalid.
-- Failure behavior remains fail-closed and deterministic for LPG review lanes.
-
-EvidenceArtifacts:
-
-- `artifacts/policy/review-lpg-artifacts.json`
-- `artifacts/policy/final-verdict.json`
-
-### Task
-
 TaskID: TB-013
 OwnerAgent: agent2
-Status: assigned
+Status: done
 ScopePaths:
 
 - `.github/scripts/validate-pr-template.py`

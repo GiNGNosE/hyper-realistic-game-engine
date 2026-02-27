@@ -28,29 +28,37 @@ def read_event(path: str):
 
 def run_git_diff(base_sha: str, head_sha: str):
     if not base_sha or not head_sha:
-        return []
+        return [], []
     completed = subprocess.run(
         ["git", "diff", "--name-only", base_sha, head_sha],
         capture_output=True,
         text=True,
-        check=True,
+        check=False,
     )
-    return sorted([line.strip() for line in completed.stdout.splitlines() if line.strip()])
+    if completed.returncode != 0:
+        message = (completed.stdout or completed.stderr or "").strip() or "git diff failed"
+        return [], [f"git diff failed for PR range {base_sha}..{head_sha}: {message}"]
+    return sorted([line.strip() for line in completed.stdout.splitlines() if line.strip()]), []
 
 
 def local_changed_paths():
     paths = set()
+    errors = []
     for cmd in (
         ["git", "diff", "--name-only"],
         ["git", "diff", "--cached", "--name-only"],
         ["git", "ls-files", "--others", "--exclude-standard"],
     ):
-        completed = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        completed = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        if completed.returncode != 0:
+            message = (completed.stdout or completed.stderr or "").strip() or "git command failed"
+            errors.append(f"{' '.join(cmd)} failed: {message}")
+            continue
         for line in completed.stdout.splitlines():
             line = line.strip()
             if line:
                 paths.add(line)
-    return sorted(paths)
+    return sorted(paths), errors
 
 
 event_name = os.environ.get("GITHUB_EVENT_NAME", "").strip()
@@ -65,27 +73,43 @@ if isinstance(event, dict) and isinstance(event.get("pull_request"), dict):
     if not head_sha:
         head_sha = str(pr.get("head", {}).get("sha", "")).strip()
 
-changed_paths = run_git_diff(base_sha, head_sha) if base_sha and head_sha else local_changed_paths()
+if base_sha and head_sha:
+    changed_paths, git_collection_errors = run_git_diff(base_sha, head_sha)
+else:
+    changed_paths, git_collection_errors = local_changed_paths()
 
 board_path = pathlib.Path("docs/governance/agent-task-board.md")
 board_tasks = {}
 if board_path.exists():
     board_text = board_path.read_text(encoding="utf-8")
-    blocks = re.split(r"(?m)^### Task\s*$", board_text)
-    for block in blocks[1:]:
-        task_id_match = re.search(r"(?m)^TaskID:\s*(\S+)\s*$", block)
-        owner_match = re.search(r"(?m)^OwnerAgent:\s*(\S+)\s*$", block)
-        if task_id_match and owner_match:
-            board_tasks[task_id_match.group(1)] = owner_match.group(1).lower()
+
+    def section_body(markdown: str, heading: str) -> str:
+        pattern = rf"(?ms)^## {re.escape(heading)}\s*\n(.*?)(?=^## |\Z)"
+        match = re.search(pattern, markdown)
+        return match.group(1).strip() if match else ""
+
+    for section_name in ("ActiveTasks", "QueuedTasks"):
+        section_text = section_body(board_text, section_name)
+        blocks = re.split(r"(?m)^### Task\s*$", section_text)
+        for block in blocks[1:]:
+            task_id_match = re.search(r"(?m)^TaskID:\s*(\S+)\s*$", block)
+            owner_match = re.search(r"(?m)^OwnerAgent:\s*(\S+)\s*$", block)
+            if task_id_match and owner_match:
+                board_tasks[task_id_match.group(1)] = {
+                    "owner_agent": owner_match.group(1).lower(),
+                    "section": section_name,
+                }
 
 findings = []
 warnings = []
 checks = {
     "changed_paths_detected": "pass" if changed_paths else "warn",
+    "git_path_collection": "pass",
     "clarification_validator_has_matrix_guard": "pass",
     "policy_verdict_workflow_has_docs_alignment": "pass",
     "findings_owner_assignment": "pass",
     "findings_task_board_mapping": "pass",
+    "board_task_sections_resolved": "pass",
 }
 
 
@@ -111,6 +135,10 @@ def add_finding(
 
 if not changed_paths:
     warnings.append("No changed paths detected; reviewer-agent performed baseline validation only.")
+if git_collection_errors:
+    checks["git_path_collection"] = "warn"
+    for item in git_collection_errors:
+        warnings.append(item)
 
 clarification_validator_changed = ".github/scripts/validate-clarification-log.sh" in changed_paths
 clarification_matrix_harness_changed = ".github/scripts/test-validate-clarification-log-matrix.sh" in changed_paths
@@ -173,12 +201,19 @@ for finding in findings:
     task_id = str(finding.get("task_id", "")).strip()
     if not task_id:
         continue
-    expected_owner = board_tasks.get(task_id, "")
+    task_entry = board_tasks.get(task_id, {})
+    expected_owner = task_entry.get("owner_agent", "")
+    expected_section = task_entry.get("section", "")
     if not expected_owner:
         task_mismatches.append(
             f"{finding.get('finding_id')} references unknown task_id {task_id}"
         )
         continue
+    if expected_section not in {"ActiveTasks", "QueuedTasks"}:
+        checks["board_task_sections_resolved"] = "fail"
+        task_mismatches.append(
+            f"{finding.get('finding_id')} task {task_id} has invalid board section mapping"
+        )
     if expected_owner != finding.get("owner_agent"):
         task_mismatches.append(
             f"{finding.get('finding_id')} owner mismatch: task {task_id} belongs to {expected_owner}"

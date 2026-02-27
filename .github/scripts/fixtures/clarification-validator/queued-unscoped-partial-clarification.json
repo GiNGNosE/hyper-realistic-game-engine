@@ -1,0 +1,61 @@
+{
+  "event_name": "schedule",
+  "inputs": {
+    "artifacts/policy/clarification-log.json": {
+      "json": {
+        "ambiguities": [
+          {
+            "ambiguity_id": "q1",
+            "detected_issue": "missing acceptance details",
+            "question_asked": "What acceptance criteria should apply?",
+            "resolved_at": "2026-02-27T00:00:00Z",
+            "resolved_decision": "",
+            "trigger_type": "missing_acceptance_criteria",
+            "user_response": ""
+          }
+        ],
+        "schema_version": "1.0.0"
+      }
+    },
+    "artifacts/policy/governance-conflicts.json": {
+      "json": {
+        "active_conflicts": 0
+      }
+    },
+    "artifacts/policy/implementation-options.json": {
+      "json": {
+        "candidates": [
+          "single"
+        ],
+        "selected_option": "single"
+      }
+    },
+    "artifacts/policy/required-rules.json": {
+      "json": {
+        "changed_paths": []
+      }
+    },
+    "artifacts/policy/rule-read-receipt.json": {
+      "json": {
+        "changed_paths": []
+      }
+    }
+  },
+  "expect": {
+    "contains_errors": [
+      "clarification-log missing required field: task_id",
+      "clarification-log missing required field: commit_id",
+      "ambiguities[0].user_response must be a non-empty string",
+      "ambiguities[0].resolved_decision must be a non-empty string"
+    ],
+    "contains_trigger_types": [
+      "missing_acceptance_criteria"
+    ],
+    "exit_code": 1,
+    "required_clarification": true,
+    "status": "fail",
+    "target_scope_required": false,
+    "validation_artifact_present": true
+  },
+  "scenario_id": "queued-unscoped-partial-clarification"
+}

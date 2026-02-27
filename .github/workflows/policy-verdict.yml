@@ -204,6 +204,52 @@ jobs:
           name: lane-pr-template-governance
           path: artifacts/policy/pr-template-validation.json
 
+  cycle-closeout-evidence:
+    name: cycle-closeout-evidence
+    runs-on: ubuntu-latest
+    needs:
+      - lane-runtime-benchmark
+      - lane-performance
+    env:
+      POLICY_PHASE: ${{ github.event.inputs.policy_phase || 'pre-phase-0' }}
+      CYCLE_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download runtime benchmark artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lpg-runtime-metrics
+          path: artifacts/perf
+      - name: Download lane-performance artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lane-performance
+          path: artifacts/policy
+      - name: Normalize downloaded artifact paths
+        run: |
+          if [[ ! -f "artifacts/perf/lpg-metrics.json" && -f "artifacts/perf/artifacts/perf/lpg-metrics.json" ]]; then
+            mkdir -p artifacts/perf
+            cp "artifacts/perf/artifacts/perf/lpg-metrics.json" "artifacts/perf/lpg-metrics.json"
+          fi
+          if [[ -d "artifacts/policy/artifacts/policy" ]]; then
+            cp artifacts/policy/artifacts/policy/*.json artifacts/policy/
+            if compgen -G "artifacts/policy/artifacts/policy/*.md" > /dev/null; then
+              cp artifacts/policy/artifacts/policy/*.md artifacts/policy/
+            fi
+          fi
+      - name: Run cycle evidence bundle tests
+        run: python3 .github/scripts/test-generate-cycle-evidence-bundle.py
+      - name: Generate cycle closeout evidence bundle
+        run: python3 .github/scripts/generate-cycle-evidence-bundle.py
+      - name: Upload cycle closeout evidence artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cycle-closeout-evidence
+          path: artifacts/cycle-evidence/*
+
   policy-verdict:
     name: policy-verdict
     runs-on: ubuntu-latest
@@ -216,6 +262,7 @@ jobs:
       - clarification-event-gating-guardrail
       - lane-branch-governance
       - lane-pr-template-governance
+      - cycle-closeout-evidence
     steps:
       - name: Compute final policy verdict
         run: |
@@ -227,6 +274,7 @@ jobs:
           CLARIFICATION_GUARDRAIL_STATUS="${{ needs.clarification-event-gating-guardrail.result }}"
           BRANCH_GOVERNANCE_STATUS="${{ needs.lane-branch-governance.result }}"
           PR_TEMPLATE_STATUS="${{ needs.lane-pr-template-governance.result }}"
+          CYCLE_EVIDENCE_STATUS="${{ needs.cycle-closeout-evidence.result }}"
           IS_PULL_REQUEST_EVENT="${{ github.event_name == 'pull_request' }}"
 
           if [[ "${IS_PULL_REQUEST_EVENT}" == "true" ]]; then
@@ -247,6 +295,7 @@ jobs:
                 "${PROOF_STATUS}" == "success" &&
                 "${CLARIFICATION_GUARDRAIL_STATUS}" == "success" &&
                 "${BRANCH_GOVERNANCE_STATUS}" == "success" &&
+                "${CYCLE_EVIDENCE_STATUS}" == "success" &&
                 "${PR_TEMPLATE_GATE_OK}" == "true" ]]; then
             VERDICT="pass"
           else
@@ -264,6 +313,7 @@ jobs:
               "proof-enforcement": "${PROOF_STATUS}",
               "clarification-event-gating-guardrail": "${CLARIFICATION_GUARDRAIL_STATUS}",
               "lane-branch-governance": "${BRANCH_GOVERNANCE_STATUS}",
+              "cycle-closeout-evidence": "${CYCLE_EVIDENCE_STATUS}",
               "lane-pr-template-governance": "${PR_TEMPLATE_STATUS}"
             }
           }

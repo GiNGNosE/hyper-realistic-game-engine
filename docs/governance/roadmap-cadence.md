@@ -1,10 +1,13 @@
 # Roadmap Cadence and Program Governance
 
-This document defines how the project is steered over a decade while preserving the technical quality gates.
+This document defines how the project is steered over a decade while preserving
+the technical quality gates.
 
 ## Baseline Assessment (v4 gap)
 
-Current governance in `cpp_solo_governance_v4` is strong at merge-time enforcement, but it does not fully specify long-horizon operating rhythm. The gap is not technical correctness; the gap is decade-scale execution control.
+Current governance in `cpp_solo_governance_v4` is strong at merge-time enforcement,
+but it does not fully specify long-horizon operating rhythm. The gap is not
+technical correctness; the gap is decade-scale execution control.
 
 ## Dual-Objective Charter (Non-Negotiable)
 
@@ -52,6 +55,17 @@ Each 12-week cycle must publish a single evidence pack that contains:
 - baseline delta summary,
 - links to snapshots/renders/audio artifacts,
 - ADR IDs touched in the cycle.
+
+The canonical closeout artifact is produced by CI job `cycle-closeout-evidence` and uploaded as
+artifact `cycle-closeout-evidence`.
+
+Bundle contract:
+
+- `artifacts/cycle-evidence/cycle-evidence-summary.json` (machine-readable verdict and evidence map),
+- `artifacts/cycle-evidence/cycle-evidence-summary.md` (human-readable closeout summary),
+- `artifacts/cycle-evidence/evidence-index.json` (source artifact pointers and integrity hashes).
+
+Cycle closeout review is complete only when the bundle status is `pass` and the artifact is attached to the run.
 
 ## Escalation Rule
 

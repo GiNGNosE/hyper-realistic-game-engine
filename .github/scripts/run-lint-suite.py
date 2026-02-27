@@ -221,6 +221,37 @@ def lint_cxx(files: List[str]) -> Dict[str, object]:
     build_dir = os.environ.get("CLANG_TIDY_BUILD_DIR", "build")
     compile_db = pathlib.Path(build_dir) / "compile_commands.json"
     if not compile_db.exists():
+        fallback_dirs = ["build/runtime", "runtime/build"]
+        for candidate in fallback_dirs:
+            candidate_db = pathlib.Path(candidate) / "compile_commands.json"
+            if candidate_db.exists():
+                build_dir = candidate
+                compile_db = candidate_db
+                break
+    if not compile_db.exists():
+        # Best-effort compile DB bootstrap for CI/local lint runs that
+        # haven't configured the runtime build tree yet.
+        cmake_rc, cmake_output = run_command(
+            [
+                "cmake",
+                "-S",
+                "runtime",
+                "-B",
+                "build/runtime",
+                "-DCMAKE_BUILD_TYPE=Release",
+                "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            ]
+        )
+        if cmake_rc == 0:
+            bootstrap_db = pathlib.Path("build/runtime/compile_commands.json")
+            if bootstrap_db.exists():
+                build_dir = "build/runtime"
+                compile_db = bootstrap_db
+        else:
+            result["errors"].append("Failed to bootstrap compile_commands.json via CMake")
+            result["errors"].append(cmake_output.strip())
+
+    if not compile_db.exists():
         result["checks"]["clang-tidy"] = "fail"
         result["status"] = "fail"
         result["errors"].append(f"Missing {compile_db}; required for clang-tidy")
