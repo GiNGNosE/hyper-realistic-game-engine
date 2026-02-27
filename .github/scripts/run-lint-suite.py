@@ -221,6 +221,14 @@ def lint_cxx(files: List[str]) -> Dict[str, object]:
     build_dir = os.environ.get("CLANG_TIDY_BUILD_DIR", "build")
     compile_db = pathlib.Path(build_dir) / "compile_commands.json"
     if not compile_db.exists():
+        fallback_dirs = ["build/runtime", "runtime/build"]
+        for candidate in fallback_dirs:
+            candidate_db = pathlib.Path(candidate) / "compile_commands.json"
+            if candidate_db.exists():
+                build_dir = candidate
+                compile_db = candidate_db
+                break
+    if not compile_db.exists():
         result["checks"]["clang-tidy"] = "fail"
         result["status"] = "fail"
         result["errors"].append(f"Missing {compile_db}; required for clang-tidy")

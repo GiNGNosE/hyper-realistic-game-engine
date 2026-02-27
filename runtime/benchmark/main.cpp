@@ -26,9 +26,8 @@ struct Config {
 };
 
 void PrintUsage() {
-  std::cerr
-      << "Usage: lpg-runtime-benchmark --phase <phase> --scenario-set <id> "
-      << "--output <path>\n";
+  std::cerr << "Usage: lpg-runtime-benchmark --phase <phase> --scenario-set <id> "
+            << "--output <path>\n";
 }
 
 bool ParseArgs(int argc, char** argv, Config& cfg, std::string& error) {
@@ -88,24 +87,24 @@ std::string JsonEscape(const std::string& value) {
   out.reserve(value.size());
   for (const char c : value) {
     switch (c) {
-      case '\\':
-        out += "\\\\";
-        break;
-      case '\"':
-        out += "\\\"";
-        break;
-      case '\n':
-        out += "\\n";
-        break;
-      case '\r':
-        out += "\\r";
-        break;
-      case '\t':
-        out += "\\t";
-        break;
-      default:
-        out.push_back(c);
-        break;
+    case '\\':
+      out += "\\\\";
+      break;
+    case '\"':
+      out += "\\\"";
+      break;
+    case '\n':
+      out += "\\n";
+      break;
+    case '\r':
+      out += "\\r";
+      break;
+    case '\t':
+      out += "\\t";
+      break;
+    default:
+      out.push_back(c);
+      break;
     }
   }
   return out;
@@ -180,7 +179,9 @@ std::optional<std::string> BuildPayload(const Config& cfg) {
     json += "      \"scenario_id\": \"" + JsonEscape(scenario.id) + "\",\n";
     json += "      \"seed\": " + std::to_string(scenario.seed) + ",\n";
     json += "      \"metrics\": {\n";
-    json += "        \"D1_ReplayHashMatchRate\": " + std::to_string(scenario.replay_hash_match_rate) + ",\n";
+    json +=
+        "        \"D1_ReplayHashMatchRate\": " + std::to_string(scenario.replay_hash_match_rate) +
+        ",\n";
     json += "        \"runtime_median_ms\": " + std::to_string(scenario.runtime_median_ms) + ",\n";
     json += "        \"runtime_p95_ms\": " + std::to_string(scenario.runtime_p95_ms) + "\n";
     json += "      }\n";
@@ -204,7 +205,7 @@ std::optional<std::string> BuildPayload(const Config& cfg) {
   return json;
 }
 
-}  // namespace
+} // namespace
 
 int main(int argc, char** argv) {
   Config cfg;
@@ -221,7 +222,8 @@ int main(int argc, char** argv) {
     return 3;
   }
   if (cfg.scenario_set != kSupportedScenarioSet) {
-    std::cerr << "Unsupported scenario set for runtime benchmark backend: " << cfg.scenario_set << "\n";
+    std::cerr << "Unsupported scenario set for runtime benchmark backend: " << cfg.scenario_set
+              << "\n";
     std::cerr << "Supported scenario set is currently: " << kSupportedScenarioSet << "\n";
     return 3;
   }
