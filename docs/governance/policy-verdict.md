@@ -114,8 +114,23 @@ Lane B must run through the Lane Performance Gate (LPG) contract:
 - `artifacts/policy/reviewer-agent-verdict.json`
 - `artifacts/policy/agent-delivery-validation.json`
 - `artifacts/policy/agent-task-board-validation.json`
+- `artifacts/cycle-evidence/cycle-evidence-summary.json`
+- `artifacts/cycle-evidence/cycle-evidence-summary.md`
+- `artifacts/cycle-evidence/evidence-index.json`
 
 Lint behavior and suppression lifecycle are defined in `docs/governance/linting-policy.md`.
+
+## Cycle Closeout Evidence Bundle
+
+`policy-verdict` includes mandatory job `cycle-closeout-evidence` that composes cycle-closeout
+evidence from lane artifacts.
+
+- Inputs include runtime benchmark metrics, LPG threshold pass/fail output, baseline delta/integrity,
+  and ADR index linkage.
+- The bundle must report dual-objective status explicitly:
+  - quality/determinism objective,
+  - runtime performance objective.
+- Missing mandatory inputs or non-pass objective status is merge-blocking.
 
 ## Waiver Enforcement
 

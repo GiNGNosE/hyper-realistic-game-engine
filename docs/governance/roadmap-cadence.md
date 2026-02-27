@@ -53,6 +53,17 @@ Each 12-week cycle must publish a single evidence pack that contains:
 - links to snapshots/renders/audio artifacts,
 - ADR IDs touched in the cycle.
 
+The canonical closeout artifact is produced by CI job `cycle-closeout-evidence` and uploaded as
+artifact `cycle-closeout-evidence`.
+
+Bundle contract:
+
+- `artifacts/cycle-evidence/cycle-evidence-summary.json` (machine-readable verdict and evidence map),
+- `artifacts/cycle-evidence/cycle-evidence-summary.md` (human-readable closeout summary),
+- `artifacts/cycle-evidence/evidence-index.json` (source artifact pointers and integrity hashes).
+
+Cycle closeout review is complete only when the bundle status is `pass` and the artifact is attached to the run.
+
 ## Escalation Rule
 
 If fidelity or performance misses target in two consecutive cycle checkpoints:
