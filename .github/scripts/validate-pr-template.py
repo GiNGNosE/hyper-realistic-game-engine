@@ -70,6 +70,7 @@ PLACEHOLDER_PATTERN = re.compile(r"\b(TBD|TODO)\b|<fill|<replace", flags=re.IGNO
 MARKER_PATTERN = re.compile(r"<!--\s*pr_template:\s*([a-z0-9-]+)\s*-->", flags=re.IGNORECASE)
 HEADING_PATTERN = re.compile(r"^##\s+(.+?)\s*$", flags=re.MULTILINE)
 CHECKED_PATTERN = re.compile(r"^\s*-\s*\[[xX]\]\s+", flags=re.MULTILINE)
+CHECKLIST_ITEM_PATTERN = re.compile(r"^\s*-\s*\[([ xX])\]\s+(.+?)\s*$", flags=re.MULTILINE)
 
 
 def normalize_heading(heading: str) -> str:
@@ -167,9 +168,22 @@ def validate_pr_body(pr_body: str, mode: str) -> Dict[str, object]:
     for section in requirements.get("checklist_sections", []):
         key = normalize_heading(section)
         content = parsed.get(key, "")
-        if content and "[ ]" in content and not CHECKED_PATTERN.search(content):
+        if not content:
+            continue
+
+        checklist_items = CHECKLIST_ITEM_PATTERN.findall(content)
+        if not checklist_items:
             checks["checklist_completion"] = "fail"
-            errors.append(f"Section '{section}' has checkboxes but none are checked.")
+            errors.append(f"Section '{section}' must include checklist items.")
+            continue
+
+        unchecked_labels = [label.strip() for state, label in checklist_items if state.lower() != "x"]
+        if unchecked_labels:
+            checks["checklist_completion"] = "fail"
+            errors.append(
+                f"Section '{section}' has incomplete checklist items: "
+                + ", ".join(unchecked_labels)
+            )
 
     artifact_links = parsed.get(normalize_heading("Artifact Links"), "")
     if artifact_links and "artifacts/" not in artifact_links:

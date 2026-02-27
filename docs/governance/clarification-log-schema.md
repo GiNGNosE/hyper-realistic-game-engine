@@ -63,6 +63,15 @@ CI must reject when:
 
 If no ambiguity trigger exists, the artifact is optional and not required to pass.
 
+## Task Board Lifecycle Context
+
+Clarification evidence is evaluated against the current task-board lifecycle state:
+
+- `ActiveTasks` represent the active execution wave.
+- `QueuedTasks` represent pre-assigned follow-up work and are not executable until orchestrator promotion.
+- Owner agents set `Status: done` when implementation completes, and orchestrator removes completed tasks after merge.
+- CI validation must treat active-vs-queued placement as governance context, not as a schema variant.
+
 ### Event-Scoped Trigger Semantics
 
 `missing_target_scope` is conditionally event-scoped. It is required only for events where

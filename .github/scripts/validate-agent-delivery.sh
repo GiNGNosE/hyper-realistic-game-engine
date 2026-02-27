@@ -26,16 +26,25 @@ if board_path.exists():
     board_content = board_path.read_text(encoding="utf-8")
     version_match = re.search(r"(?m)^BoardVersion:\s*(\S+)\s*$", board_content)
     board_version = version_match.group(1) if version_match else ""
-    task_blocks = re.split(r"(?m)^### Task\s*$", board_content)
-    for block in task_blocks[1:]:
-        task_id_match = re.search(r"(?m)^TaskID:\s*(\S+)\s*$", block)
-        owner_match = re.search(r"(?m)^OwnerAgent:\s*(\S+)\s*$", block)
-        status_match = re.search(r"(?m)^Status:\s*(\S+)\s*$", block)
-        if task_id_match and owner_match and status_match:
-            board_tasks[task_id_match.group(1)] = {
-                "owner": owner_match.group(1).lower(),
-                "status": status_match.group(1).lower(),
-            }
+
+    def section_body(markdown: str, heading: str) -> str:
+        pattern = rf"(?ms)^## {re.escape(heading)}\s*\n(.*?)(?=^## |\Z)"
+        match = re.search(pattern, markdown)
+        return match.group(1).strip() if match else ""
+
+    for section_name in ("ActiveTasks", "QueuedTasks"):
+        section_text = section_body(board_content, section_name)
+        task_blocks = re.split(r"(?m)^### Task\s*$", section_text)
+        for block in task_blocks[1:]:
+            task_id_match = re.search(r"(?m)^TaskID:\s*(\S+)\s*$", block)
+            owner_match = re.search(r"(?m)^OwnerAgent:\s*(\S+)\s*$", block)
+            status_match = re.search(r"(?m)^Status:\s*(\S+)\s*$", block)
+            if task_id_match and owner_match and status_match:
+                board_tasks[task_id_match.group(1)] = {
+                    "owner": owner_match.group(1).lower(),
+                    "status": status_match.group(1).lower(),
+                    "section": section_name,
+                }
 else:
     board_content = ""
 
@@ -52,6 +61,7 @@ checks = {
     "pr_body_task_board_version": "pass",
     "pr_body_task_id": "pass",
     "task_board_lookup_match": "pass",
+    "task_section_valid": "pass",
     "task_status_valid": "pass",
     "commit_subject_agent_prefix": "pass",
 }
@@ -106,10 +116,16 @@ if is_pr_context:
             else:
                 expected_owner = task_entry["owner"]
                 task_status = task_entry["status"]
+                task_section = task_entry.get("section", "")
                 if owner_agent and expected_owner != owner_agent:
                     checks["task_board_lookup_match"] = "fail"
                     errors.append(
                         f"TaskID owner mismatch: TaskID {task_id} belongs to {expected_owner}, PR declares {owner_agent}"
+                    )
+                if task_section not in {"ActiveTasks", "QueuedTasks"}:
+                    checks["task_section_valid"] = "fail"
+                    errors.append(
+                        f"TaskID {task_id} is not mapped to ActiveTasks or QueuedTasks section"
                     )
                 if task_status == "cancelled":
                     checks["task_status_valid"] = "fail"
@@ -162,6 +178,7 @@ else:
     checks["pr_body_task_board_version"] = "skip"
     checks["pr_body_task_id"] = "skip"
     checks["task_board_lookup_match"] = "skip"
+    checks["task_section_valid"] = "skip"
     checks["task_status_valid"] = "skip"
     checks["commit_subject_agent_prefix"] = "skip"
 
@@ -173,6 +190,7 @@ payload = {
     "task_board_version": task_board_version,
     "task_id": task_id,
     "task_status": board_tasks.get(task_id, {}).get("status", ""),
+    "task_section": board_tasks.get(task_id, {}).get("section", ""),
     "board_version": board_version,
     "checks": checks,
     "commit_count": len(commit_subjects),

@@ -216,6 +216,32 @@ for fixture_path in fixture_paths:
                         "observed": observed_codes,
                     }
                 )
+        if "guardrail_scenario_error_count" in expect:
+            check_equal(
+                "guardrail_scenario_error_count",
+                int(guardrail_payload.get("scenario_error_count", 0)),
+                int(expect["guardrail_scenario_error_count"]),
+            )
+        if "guardrail_contains_messages" in expect:
+            checks.append("guardrail_contains_messages")
+            observed_messages = [
+                str(err.get("message", ""))
+                for err in guardrail_payload.get("scenario_errors", [])
+                if isinstance(err, dict)
+            ]
+            missing_message_snippets = []
+            for required_substring in expect["guardrail_contains_messages"]:
+                if not any(required_substring in observed for observed in observed_messages):
+                    missing_message_snippets.append(required_substring)
+            if missing_message_snippets:
+                failures.append(f"guardrail_contains_messages: missing {missing_message_snippets}")
+                expectation_diffs.append(
+                    {
+                        "check": "guardrail_contains_messages",
+                        "expected_contains": sorted(expect["guardrail_contains_messages"]),
+                        "observed": observed_messages,
+                    }
+                )
         if "contains_trigger_types" in expect:
             checks.append("contains_trigger_types")
             expected = set(expect["contains_trigger_types"])
@@ -268,6 +294,7 @@ for fixture_path in fixture_paths:
                             if isinstance(err, dict) and isinstance(err.get("code", ""), str)
                         }
                     ),
+                    "guardrail_scenario_error_count": int(guardrail_payload.get("scenario_error_count", 0)),
                 },
                 "stdout": proc.stdout.strip().splitlines(),
                 "guardrail_stdout": guardrail_proc.stdout.strip().splitlines(),

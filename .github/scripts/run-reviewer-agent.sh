@@ -82,12 +82,23 @@ board_path = pathlib.Path("docs/governance/agent-task-board.md")
 board_tasks = {}
 if board_path.exists():
     board_text = board_path.read_text(encoding="utf-8")
-    blocks = re.split(r"(?m)^### Task\s*$", board_text)
-    for block in blocks[1:]:
-        task_id_match = re.search(r"(?m)^TaskID:\s*(\S+)\s*$", block)
-        owner_match = re.search(r"(?m)^OwnerAgent:\s*(\S+)\s*$", block)
-        if task_id_match and owner_match:
-            board_tasks[task_id_match.group(1)] = owner_match.group(1).lower()
+
+    def section_body(markdown: str, heading: str) -> str:
+        pattern = rf"(?ms)^## {re.escape(heading)}\s*\n(.*?)(?=^## |\Z)"
+        match = re.search(pattern, markdown)
+        return match.group(1).strip() if match else ""
+
+    for section_name in ("ActiveTasks", "QueuedTasks"):
+        section_text = section_body(board_text, section_name)
+        blocks = re.split(r"(?m)^### Task\s*$", section_text)
+        for block in blocks[1:]:
+            task_id_match = re.search(r"(?m)^TaskID:\s*(\S+)\s*$", block)
+            owner_match = re.search(r"(?m)^OwnerAgent:\s*(\S+)\s*$", block)
+            if task_id_match and owner_match:
+                board_tasks[task_id_match.group(1)] = {
+                    "owner_agent": owner_match.group(1).lower(),
+                    "section": section_name,
+                }
 
 findings = []
 warnings = []
@@ -98,6 +109,7 @@ checks = {
     "policy_verdict_workflow_has_docs_alignment": "pass",
     "findings_owner_assignment": "pass",
     "findings_task_board_mapping": "pass",
+    "board_task_sections_resolved": "pass",
 }
 
 
@@ -189,12 +201,19 @@ for finding in findings:
     task_id = str(finding.get("task_id", "")).strip()
     if not task_id:
         continue
-    expected_owner = board_tasks.get(task_id, "")
+    task_entry = board_tasks.get(task_id, {})
+    expected_owner = task_entry.get("owner_agent", "")
+    expected_section = task_entry.get("section", "")
     if not expected_owner:
         task_mismatches.append(
             f"{finding.get('finding_id')} references unknown task_id {task_id}"
         )
         continue
+    if expected_section not in {"ActiveTasks", "QueuedTasks"}:
+        checks["board_task_sections_resolved"] = "fail"
+        task_mismatches.append(
+            f"{finding.get('finding_id')} task {task_id} has invalid board section mapping"
+        )
     if expected_owner != finding.get("owner_agent"):
         task_mismatches.append(
             f"{finding.get('finding_id')} owner mismatch: task {task_id} belongs to {expected_owner}"

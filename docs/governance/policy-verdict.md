@@ -68,6 +68,8 @@ Lane B must run through the Lane Performance Gate (LPG) contract:
 - Any board schema/hash mismatch is merge-blocking.
 - Completion lifecycle is soft-archive: tasks may remain with `Status: done` until orchestrator cleanup after merge.
 - `agent-delivery` must reject PR metadata that references a `cancelled` task.
+- Active-vs-queued board sections are part of the validated contract: `ActiveTasks` are executable in the
+  current wave, while `QueuedTasks` are pre-assigned and promoted by orchestrator after active stabilization.
 
 ## Threshold Source of Truth
 

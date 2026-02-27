@@ -3,7 +3,7 @@
 <!-- markdownlint-disable MD022 MD024 -->
 
 BoardVersion: 2026-02-27.4
-BoardHash: 632dda37559de8db204351071bd866db3d41869437381797bdefddab0227b04f
+BoardHash: 50c1882e820800587a564e0493307051130eee647eebf90b4375b66db82c64e1
 ## ActiveTasks
 
 ### Task
@@ -92,7 +92,7 @@ EvidenceArtifacts:
 
 TaskID: TB-008
 OwnerAgent: agent1
-Status: assigned
+Status: done
 ScopePaths:
 
 - `.github/scripts/validate-clarification-log.sh`
@@ -119,7 +119,7 @@ EvidenceArtifacts:
 
 TaskID: TB-009
 OwnerAgent: agent2
-Status: assigned
+Status: done
 ScopePaths:
 
 - `docs/governance/clarification-log-schema.md`
@@ -148,7 +148,7 @@ EvidenceArtifacts:
 
 TaskID: TB-010
 OwnerAgent: agent3
-Status: assigned
+Status: done
 ScopePaths:
 
 - `.github/workflows/agent-delivery.yml`
@@ -178,7 +178,7 @@ EvidenceArtifacts:
 
 TaskID: TB-011
 OwnerAgent: agent1
-Status: assigned
+Status: done
 ScopePaths:
 
 - `runtime/benchmark/main.cpp`
@@ -202,7 +202,7 @@ EvidenceArtifacts:
 
 TaskID: TB-013
 OwnerAgent: agent2
-Status: assigned
+Status: done
 ScopePaths:
 
 - `.github/scripts/validate-pr-template.py`

@@ -28,6 +28,8 @@ Entrypoint rules:
 - must be executable in `ubuntu-latest`,
 - must not require interactive input,
 - must fail fast on benchmark execution errors.
+- output parent directory creation is conditional: create directories only when
+  `--output` has a non-empty parent path.
 
 ## Runtime Backend Bridge (Current)
 
@@ -43,6 +45,8 @@ Current `tools/runtime-harness/run-benchmark.sh` acts as a strict backend bridge
   and active phase required metrics before returning success.
 - currently supports only `pre-phase-0` for real metric emission; unsupported phases
   and scenario sets fail explicitly.
+- when output directory creation fails, emits deterministic error messaging and
+  a non-zero exit code.
 
 ## Command Contract
 

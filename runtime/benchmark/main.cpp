@@ -232,11 +232,15 @@ int main(int argc, char** argv) {
     return 4;
   }
 
-  std::error_code mkdir_ec;
-  std::filesystem::create_directories(cfg.output_path.parent_path(), mkdir_ec);
-  if (mkdir_ec) {
-    std::cerr << "Failed to create output directory: " << mkdir_ec.message() << "\n";
-    return 5;
+  const std::filesystem::path output_parent = cfg.output_path.parent_path();
+  if (!output_parent.empty()) {
+    std::error_code mkdir_ec;
+    std::filesystem::create_directories(output_parent, mkdir_ec);
+    if (mkdir_ec) {
+      std::cerr << "Failed to create output directory '" << output_parent.string()
+                << "': " << mkdir_ec.message() << "\n";
+      return 5;
+    }
   }
 
   std::ofstream out(cfg.output_path, std::ios::out | std::ios::trunc);

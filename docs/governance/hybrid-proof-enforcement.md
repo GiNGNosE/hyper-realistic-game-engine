@@ -118,5 +118,8 @@ The validator set was exercised with synthetic artifacts to confirm fail/pass se
 - Agent assignment source of truth is `docs/governance/agent-task-board.md`.
 - Reviewer and delivery lanes must validate assignment metadata (`TaskBoardVersion`, `TaskID`,
   `OwnerAgent`) against that board.
+- Active-vs-queued lifecycle semantics are authoritative from the task board: `ActiveTasks` are current
+  execution wave, `QueuedTasks` are pre-assigned follow-up work, and orchestrator performs queued-task
+  promotion after active-wave stabilization.
 - This model does not relax any existing governance thresholds.
 - Schema versions must be incremented with compatibility notes when contracts evolve.
