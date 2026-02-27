@@ -28,29 +28,37 @@ def read_event(path: str):
 
 def run_git_diff(base_sha: str, head_sha: str):
     if not base_sha or not head_sha:
-        return []
+        return [], []
     completed = subprocess.run(
         ["git", "diff", "--name-only", base_sha, head_sha],
         capture_output=True,
         text=True,
-        check=True,
+        check=False,
     )
-    return sorted([line.strip() for line in completed.stdout.splitlines() if line.strip()])
+    if completed.returncode != 0:
+        message = (completed.stdout or completed.stderr or "").strip() or "git diff failed"
+        return [], [f"git diff failed for PR range {base_sha}..{head_sha}: {message}"]
+    return sorted([line.strip() for line in completed.stdout.splitlines() if line.strip()]), []
 
 
 def local_changed_paths():
     paths = set()
+    errors = []
     for cmd in (
         ["git", "diff", "--name-only"],
         ["git", "diff", "--cached", "--name-only"],
         ["git", "ls-files", "--others", "--exclude-standard"],
     ):
-        completed = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        completed = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        if completed.returncode != 0:
+            message = (completed.stdout or completed.stderr or "").strip() or "git command failed"
+            errors.append(f"{' '.join(cmd)} failed: {message}")
+            continue
         for line in completed.stdout.splitlines():
             line = line.strip()
             if line:
                 paths.add(line)
-    return sorted(paths)
+    return sorted(paths), errors
 
 
 event_name = os.environ.get("GITHUB_EVENT_NAME", "").strip()
@@ -65,7 +73,10 @@ if isinstance(event, dict) and isinstance(event.get("pull_request"), dict):
     if not head_sha:
         head_sha = str(pr.get("head", {}).get("sha", "")).strip()
 
-changed_paths = run_git_diff(base_sha, head_sha) if base_sha and head_sha else local_changed_paths()
+if base_sha and head_sha:
+    changed_paths, git_collection_errors = run_git_diff(base_sha, head_sha)
+else:
+    changed_paths, git_collection_errors = local_changed_paths()
 
 board_path = pathlib.Path("docs/governance/agent-task-board.md")
 board_tasks = {}
@@ -82,6 +93,7 @@ findings = []
 warnings = []
 checks = {
     "changed_paths_detected": "pass" if changed_paths else "warn",
+    "git_path_collection": "pass",
     "clarification_validator_has_matrix_guard": "pass",
     "policy_verdict_workflow_has_docs_alignment": "pass",
     "findings_owner_assignment": "pass",
@@ -111,6 +123,10 @@ def add_finding(
 
 if not changed_paths:
     warnings.append("No changed paths detected; reviewer-agent performed baseline validation only.")
+if git_collection_errors:
+    checks["git_path_collection"] = "warn"
+    for item in git_collection_errors:
+        warnings.append(item)
 
 clarification_validator_changed = ".github/scripts/validate-clarification-log.sh" in changed_paths
 clarification_matrix_harness_changed = ".github/scripts/test-validate-clarification-log-matrix.sh" in changed_paths

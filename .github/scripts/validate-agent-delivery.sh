@@ -128,13 +128,18 @@ if is_pr_context and base_sha and head_sha:
         ["git", "log", "--no-merges", "--format=%s", f"{base_sha}..{head_sha}"],
         capture_output=True,
         text=True,
-        check=True,
+        check=False,
     )
-    commit_subjects = [line.strip() for line in completed.stdout.splitlines() if line.strip()]
-    if not commit_subjects:
+    if completed.returncode != 0:
+        checks["commit_subject_agent_prefix"] = "fail"
+        details = (completed.stdout or completed.stderr or "").strip() or "git log failed"
+        errors.append(f"Unable to collect commit subjects for PR range {base_sha}..{head_sha}: {details}")
+    else:
+        commit_subjects = [line.strip() for line in completed.stdout.splitlines() if line.strip()]
+    if completed.returncode == 0 and not commit_subjects:
         checks["commit_subject_agent_prefix"] = "fail"
         errors.append("No commits found in PR range")
-    else:
+    elif completed.returncode == 0:
         prefix_re = re.compile(r"^\[(agent1|agent2|agent3)\]\s+.+")
         invalid = [subject for subject in commit_subjects if not prefix_re.match(subject)]
         if invalid:

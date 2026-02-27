@@ -72,6 +72,8 @@ scope evidence is mandatory.
 
 Event-scoped activation of `missing_target_scope` is a behavioral refinement only. Artifact schemas
 and required field names remain unchanged.
+Required PR delivery metadata keys (`TaskBoardVersion`, `TaskID`, `OwnerAgent`) also remain
+unchanged.
 
 ## Merge-Blocking Conditions
 

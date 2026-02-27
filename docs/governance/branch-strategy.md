@@ -94,6 +94,11 @@ Task completion lifecycle is soft-archive:
 - `QueuedTasks` is reserved for pre-assigned follow-up work and is not part of the active execution wave.
 - Orchestrator promotes queued tasks into `ActiveTasks` after the matching owner's active task is completed and stabilized.
 
+### Compatibility Note
+
+Lifecycle mapping and queued/active wave semantics are behavioral refinements. These updates do not
+remove required PR delivery metadata keys (`TaskBoardVersion`, `TaskID`, `OwnerAgent`).
+
 ## Agent Auto-Submit Contract
 
 Agent implementation branches must use:

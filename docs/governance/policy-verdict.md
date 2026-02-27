@@ -138,6 +138,8 @@ Lint behavior and suppression lifecycle are defined in `docs/governance/linting-
 - inactive for `workflow_dispatch` and `schedule`.
 
 This is a behavioral refinement of trigger conditions; it does not remove required artifact fields.
+It also does not remove required PR delivery metadata keys (`TaskBoardVersion`, `TaskID`,
+`OwnerAgent`).
 
 Promotion must fail if any proof gate fails.
 

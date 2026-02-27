@@ -79,6 +79,8 @@ changed-path scope is expected.
 
 This update refines trigger behavior by event context and does not remove any schema fields from
 `clarification-log.json`, `ambiguity-triggers.json`, or `clarification-validation.json`.
+It also does not change or remove required PR delivery metadata keys (`TaskBoardVersion`, `TaskID`,
+`OwnerAgent`).
 
 ## Related Artifacts
 
