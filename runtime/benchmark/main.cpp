@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -25,36 +26,37 @@ struct Config {
   std::filesystem::path output_path;
 };
 
-void PrintUsage() {
+auto PrintUsage() -> void {
   std::cerr << "Usage: lpg-runtime-benchmark --phase <phase> --scenario-set <id> "
             << "--output <path>\n";
 }
 
-bool ParseArgs(int argc, char** argv, Config& cfg, std::string& error) {
-  for (int i = 1; i < argc; ++i) {
-    const std::string arg = argv[i];
+auto ParseArgs(int argc, char** argv, Config& cfg, std::string& error) -> bool {
+  const auto argv_span = std::span<char*>(argv, static_cast<std::size_t>(argc));
+  for (std::size_t i = 1; i < argv_span.size(); ++i) {
+    const std::string arg = argv_span[i];
     if (arg == "--phase") {
-      if (i + 1 >= argc) {
+      if (i + 1 >= argv_span.size()) {
         error = "Missing value for --phase";
         return false;
       }
-      cfg.phase = argv[++i];
+      cfg.phase = argv_span[++i];
       continue;
     }
     if (arg == "--scenario-set") {
-      if (i + 1 >= argc) {
+      if (i + 1 >= argv_span.size()) {
         error = "Missing value for --scenario-set";
         return false;
       }
-      cfg.scenario_set = argv[++i];
+      cfg.scenario_set = argv_span[++i];
       continue;
     }
     if (arg == "--output") {
-      if (i + 1 >= argc) {
+      if (i + 1 >= argv_span.size()) {
         error = "Missing value for --output";
         return false;
       }
-      cfg.output_path = argv[++i];
+      cfg.output_path = argv_span[++i];
       continue;
     }
     if (arg == "--help" || arg == "-h") {
@@ -82,7 +84,7 @@ bool ParseArgs(int argc, char** argv, Config& cfg, std::string& error) {
   return true;
 }
 
-std::string JsonEscape(const std::string& value) {
+auto JsonEscape(const std::string& value) -> std::string {
   std::string out;
   out.reserve(value.size());
   for (const char c : value) {
@@ -110,7 +112,7 @@ std::string JsonEscape(const std::string& value) {
   return out;
 }
 
-std::string DetectRuntimeSignature() {
+auto DetectRuntimeSignature() -> std::string {
 #if defined(__APPLE__)
   return "darwin-runtime";
 #elif defined(__linux__)
@@ -122,7 +124,7 @@ std::string DetectRuntimeSignature() {
 #endif
 }
 
-std::string DetectCpuClass() {
+auto DetectCpuClass() -> std::string {
 #if defined(__x86_64__) || defined(_M_X64)
   return "x86_64-standard";
 #elif defined(__aarch64__) || defined(_M_ARM64)
@@ -132,7 +134,7 @@ std::string DetectCpuClass() {
 #endif
 }
 
-std::vector<ScenarioMetrics> CanonicalResults() {
+auto CanonicalResults() -> std::vector<ScenarioMetrics> {
   return {
       {"S1_LightTap", 101, 100.0, 13.0, 19.0},
       {"S2_ChiselImpact", 202, 100.0, 15.0, 22.0},
@@ -140,7 +142,7 @@ std::vector<ScenarioMetrics> CanonicalResults() {
   };
 }
 
-std::optional<std::string> BuildPayload(const Config& cfg) {
+auto BuildPayload(const Config& cfg) -> std::optional<std::string> {
   if (cfg.phase != kSupportedPhase) {
     return std::nullopt;
   }
@@ -207,7 +209,7 @@ std::optional<std::string> BuildPayload(const Config& cfg) {
 
 } // namespace
 
-int main(int argc, char** argv) {
+auto main(int argc, char** argv) -> int {
   Config cfg;
   std::string error;
   if (!ParseArgs(argc, argv, cfg, error)) {
